@@ -79,7 +79,7 @@ function Diagram({ k }: { k: ExKey }) {
 export function ExerciseHowTo({ k, mode }: { k: ExKey; mode: Mode }) {
   const e = EX[k];
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-surface-2 p-4 text-[0.95rem]">
+    <div className="neu-in flex flex-col gap-3 rounded-2xl p-4 text-[0.95rem] text-ink">
       <Diagram k={k} />
       <ol className="flex list-decimal flex-col gap-1.5 pl-5">
         {e.how.map((s) => (

@@ -71,7 +71,7 @@ export default function Tests({ focus }: { focus?: string }) {
                 <button
                   type="button"
                   aria-pressed={draft.scores[t.k] == null}
-                  className={`chip min-h-12 self-start rounded-xl border px-4 font-semibold ${draft.scores[t.k] == null ? 'border-accent bg-accent text-accent-ink' : 'border-line'}`}
+                  className={`chip min-h-12 self-start rounded-2xl px-4 font-semibold ${draft.scores[t.k] == null ? 'grad-panel' : 'neu-sm'}`}
                   onClick={() => setDraft({ ...draft, scores: { ...draft.scores, [t.k]: null } })}
                 >
                   Not tested
@@ -108,7 +108,7 @@ export default function Tests({ focus }: { focus?: string }) {
           <ol className="flex flex-col">
             {ranked.map((x, i) => (
               <li key={x.k} className="flex items-center gap-3 border-t border-line py-2 first:border-t-0">
-                <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-accent-soft font-display font-bold text-accent">{i + 1}</span>
+                <span className="neu-sm grid h-9 w-9 flex-none place-items-center rounded-full font-display font-bold text-accent">{i + 1}</span>
                 <span className="grow">
                   <b>{TNAME[x.k]}</b> <span className="text-muted">{EX[x.k].name}</span>
                 </span>

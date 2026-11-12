@@ -44,14 +44,14 @@ export function Today({ date: dateArg }: { date?: string }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <button type="button" className="btn h-12 w-12 p-0" aria-label="Previous day" onClick={() => go('today', addDays(date, -1))}>
+        <button type="button" className="orb h-12 w-12" aria-label="Previous day" onClick={() => go('today', addDays(date, -1))}>
           <Icon name="left" />
         </button>
         <div className="grow text-center">
           <div className="font-display text-lg font-bold">{isToday ? 'Today' : longDate(date)}</div>
           <div className="text-sm text-muted">{isToday ? longDate(date) : `${diffDays(date, today)} days ago`}</div>
         </div>
-        <button type="button" className="btn h-12 w-12 p-0" aria-label="Next day" disabled={isToday} onClick={() => go('today', addDays(date, 1))}>
+        <button type="button" className="orb h-12 w-12" aria-label="Next day" disabled={isToday} onClick={() => go('today', addDays(date, 1))}>
           <Icon name="right" />
         </button>
       </div>
@@ -83,7 +83,7 @@ export function Today({ date: dateArg }: { date?: string }) {
               onClick={() => setFlow({ kind: k, at: complete ? 0 : firstOpenStep(k, day) })}
               className="card flex w-full min-w-0 items-center gap-4 text-left"
             >
-              <span className="grid h-12 w-12 flex-none place-items-center rounded-full" style={{ background: complete ? 'var(--accent)' : 'var(--accent-soft)', color: complete ? 'var(--accent-ink)' : 'var(--accent)' }}>
+              <span className={`grid h-12 w-12 flex-none place-items-center rounded-full ${complete ? 'grad-panel' : 'neu-in text-accent'}`}>
                 <Icon name={complete ? 'check' : k === 'morning' ? 'sun' : 'moon'} />
               </span>
               <span className="flex min-w-0 grow flex-col">
@@ -99,42 +99,53 @@ export function Today({ date: dateArg }: { date?: string }) {
         })}
       </div>
 
-      <Card
-        title="Rehab"
-        action={<span className="text-sm text-muted">{adh === null ? '' : `${adh}% of priority done`}</span>}
-      >
-        <p className="hint">
-          <b className="text-ink">{phase.name}.</b> {phase.freq}. {variantFor(settings.phase, mode).dose}. Effort about 7/10, never past 3/10 pain.
-        </p>
-        {settings.phase === 'reduce' && (
-          <Seg
-            label="Reduce phase style"
-            options={[
-              { v: 'iso', label: 'Isometric holds' },
-              { v: 'pump', label: 'Light pump work' },
-            ]}
-            value={mode}
-            onChange={(v) => void patchSettings({ mode: v })}
-          />
-        )}
-        <button type="button" className="btn btn-primary min-h-14 text-lg" onClick={() => go('session', date)}>
-          <Icon name="play" /> {sessionDone(day, prio) ? 'Do another session' : 'Start guided session'}
-        </button>
-        <ul className="flex flex-col">
-          {prio.map((k, i) => (
-            <ExRow key={k} k={k} rank={i + 1} day={day} date={date} edit={edit} />
-          ))}
-        </ul>
-        {others.length > 0 && (
-          <Disclosure summary={`Other exercises (${others.length})`}>
-            <ul className="flex flex-col">
-              {others.map((k) => (
-                <ExRow key={k} k={k} rank={0} day={day} date={date} edit={edit} />
-              ))}
-            </ul>
-          </Disclosure>
-        )}
-      </Card>
+      <section className="card flex flex-col gap-0 overflow-hidden p-0">
+        <div className="flex flex-col gap-3 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl">Rehab</h2>
+            <span className="pill">{phase.name}</span>
+          </div>
+          <p className="hint">
+            {phase.freq}. {variantFor(settings.phase, mode).dose}. Effort about 7/10, never past 3/10 pain.
+          </p>
+          {settings.phase === 'reduce' && (
+            <Seg
+              label="Reduce phase style"
+              options={[
+                { v: 'iso', label: 'Isometric holds' },
+                { v: 'pump', label: 'Light pump work' },
+              ]}
+              value={mode}
+              onChange={(v) => void patchSettings({ mode: v })}
+            />
+          )}
+          <div className="flex items-center justify-center gap-6 py-2">
+            <ProgressOrb pct={adh ?? 0} onClick={() => go('session', date)} label={sessionDone(day, prio) ? 'Do another session' : 'Start guided session'} />
+          </div>
+          <p className="text-center text-sm font-semibold text-muted" aria-hidden>
+            {sessionDone(day, prio) ? 'All priority exercises done' : `${adh ?? 0}% of priority done · tap to start`}
+          </p>
+          <span className="sr-only">{adh === null ? '' : `${adh}% of priority done`}</span>
+        </div>
+        <div className="grad-panel rounded-t-[26px] px-2 pb-3 pt-2">
+          <ul className="flex flex-col">
+            {prio.map((k, i) => (
+              <ExRow key={k} k={k} rank={i + 1} day={day} date={date} edit={edit} current={k === prio.find((p) => !day.done?.[p])} />
+            ))}
+          </ul>
+          {others.length > 0 && (
+            <div className="px-3 [&_button]:text-white">
+              <Disclosure summary={`Other exercises (${others.length})`}>
+                <ul className="flex flex-col">
+                  {others.map((k) => (
+                    <ExRow key={k} k={k} rank={0} day={day} date={date} edit={edit} current={false} />
+                  ))}
+                </ul>
+              </Disclosure>
+            </div>
+          )}
+        </div>
+      </section>
 
       <Card title="Gym">
         <Toggle on={!!day.gym} onChange={(v) => void edit(date, (x) => void (x.gym = v), v ? 'Marked as a training day' : 'Marked as a rest day')}>
@@ -170,7 +181,30 @@ export function Today({ date: dateArg }: { date?: string }) {
   );
 }
 
-function ExRow({ k, rank, day, date, edit }: { k: ExKey; rank: number; day: DayData; date: string; edit: ReturnType<typeof useDayEdit> }) {
+/** Big round play button with the day's adherence as a ring around it, like a record player's control. */
+function ProgressOrb({ pct, onClick, label }: { pct: number; onClick: () => void; label: string }) {
+  const r = 52;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="relative grid h-32 w-32 place-items-center">
+      <svg viewBox="0 0 120 120" className="pointer-events-none absolute inset-0 -rotate-90" aria-hidden>
+        <defs>
+          <linearGradient id="adh" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="var(--grad-a)" />
+            <stop offset="1" stopColor="#e070d0" />
+          </linearGradient>
+        </defs>
+        <circle cx="60" cy="60" r={r} fill="none" stroke="var(--line)" strokeWidth="5" />
+        <circle cx="60" cy="60" r={r} fill="none" stroke="url(#adh)" strokeWidth="5" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} />
+      </svg>
+      <button type="button" onClick={onClick} aria-label={label} className="orb orb-ring relative h-24 w-24 text-accent">
+        <Icon name="play" size={34} />
+      </button>
+    </div>
+  );
+}
+
+function ExRow({ k, rank, day, date, edit, current }: { k: ExKey; rank: number; day: DayData; date: string; edit: ReturnType<typeof useDayEdit>; current: boolean }) {
   const { settings } = useApp();
   const [open, setOpen] = useState(false);
   const e = EX[k];
@@ -178,8 +212,25 @@ function ExRow({ k, rank, day, date, edit }: { k: ExKey; rank: number; day: DayD
   const sets = day.sets?.[k] ?? [];
   const mode = effectiveMode(settings.phase, settings.mode);
   return (
-    <li className="border-t border-line py-2 first:border-t-0">
-      <div className="flex items-center gap-3">
+    <li className={`rounded-2xl border-b border-white/15 last:border-b-0 ${current ? 'bg-white/12' : ''}`}>
+      <div className="flex items-center gap-3 px-3 py-2.5">
+        <button
+          type="button"
+          aria-label={`Start session at ${e.name}`}
+          onClick={() => go('session', `${date}/${k}`)}
+          className="grid h-11 w-11 flex-none place-items-center rounded-full bg-white/90 text-[var(--grad-b)] shadow-[0_4px_10px_rgba(20,10,60,0.25)]"
+        >
+          <Icon name="play" size={18} />
+        </button>
+        <button type="button" aria-expanded={open} aria-label={`How to: ${e.name}`} onClick={() => setOpen(!open)} className="min-w-0 grow py-1 text-left">
+          <span className="block font-semibold leading-snug">{e.name}</span>
+          <span className="block text-[0.8rem] text-white/85">
+            {rank ? `Priority ${rank} · ` : ''}
+            {e.target}
+            {sets.length > 0 && ` · ${sets.length} set${sets.length > 1 ? 's' : ''}`}
+            {day.load?.[k] && ` · ${day.load[k]}`}
+          </span>
+        </button>
         <button
           type="button"
           role="checkbox"
@@ -190,31 +241,15 @@ function ExRow({ k, rank, day, date, edit }: { k: ExKey; rank: number; day: DayD
             haptic(settings.haptics);
             void edit(date, (x) => void (x.done = { ...x.done, [k]: !done }), `${e.name}: ${done ? 'not done' : 'done'}`);
           }}
-          className="grid h-12 w-12 flex-none place-items-center rounded-xl border-2"
-          style={{ borderColor: done ? 'var(--accent)' : 'var(--muted)', background: done ? 'var(--accent)' : 'var(--surface)', color: 'var(--accent-ink)' }}
+          className={`grid h-12 w-12 flex-none place-items-center rounded-full border-2 ${done ? 'border-white bg-white text-[var(--grad-b)]' : 'border-white/70 text-white'}`}
         >
-          {done && <Icon name="check" size={26} />}
-        </button>
-        <div className="min-w-0 grow">
-          <div className="font-semibold leading-snug">{e.name}</div>
-          <div className="text-sm text-muted">
-            {rank ? <span className="font-semibold text-accent">Priority {rank} · </span> : null}
-            {e.target}
-            {sets.length > 0 && ` · ${sets.length} set${sets.length > 1 ? 's' : ''}`}
-            {day.load?.[k] && ` · ${day.load[k]}`}
-          </div>
-        </div>
-        <button type="button" aria-expanded={open} aria-label={`How to: ${e.name}`} onClick={() => setOpen(!open)} className="btn btn-ghost min-h-12 flex-none px-2">
-          How
-          <span className={`transition-transform ${open ? 'rotate-90' : ''}`}>
-            <Icon name="right" size={18} />
-          </span>
+          {done && <Icon name="check" size={24} />}
         </button>
       </div>
       {open && (
-        <div className="anim-in mt-2 flex flex-col gap-3">
+        <div className="anim-in flex flex-col gap-3 px-2 pb-3 text-ink">
           <ExerciseHowTo k={k} mode={mode} />
-          <label className="flex flex-col gap-1">
+          <label className="flex flex-col gap-1 text-white">
             <span className="label">Load used</span>
             <input
               className="field-input"

@@ -4,6 +4,8 @@ import { spawn } from 'node:child_process';
 // Taps go through the touchscreen on touch devices (iPhone 15 Pro / Pixel), mouse on desktop.
 async function press(page: Page, loc: ReturnType<Page['locator']>) {
   const touch = await page.evaluate(() => matchMedia('(pointer: coarse)').matches);
+  // Bring it to mid-screen like a person would, clear of the floating tab bar
+  await loc.evaluate((e) => e.scrollIntoView({ block: 'center' }));
   if (touch) await loc.tap();
   else await loc.click();
 }

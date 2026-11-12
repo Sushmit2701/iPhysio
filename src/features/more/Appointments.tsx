@@ -70,7 +70,7 @@ export default function Appointments() {
         Add scan, clinic or result
       </button>
       {sorted.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-line p-5 text-center text-muted">Nothing yet. For example: “MRI left elbow requested”, then add the result when it is back.</p>
+        <p className="neu-in rounded-2xl p-5 text-center text-muted">Nothing yet. For example: “MRI left elbow requested”, then add the result when it is back.</p>
       ) : (
         <ul className="card flex flex-col p-0">
           {sorted.map((a) => (

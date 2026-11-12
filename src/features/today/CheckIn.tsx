@@ -67,7 +67,7 @@ export const STEPS: Record<FlowKind, Step[]> = {
               type="button"
               aria-pressed={d.char === c}
               onClick={() => set((x) => void (x.char = c), `Pain felt: ${c.toLowerCase()}`)}
-              className={`chip min-h-14 rounded-xl border px-4 text-left text-lg font-semibold ${d.char === c ? 'border-accent bg-accent text-accent-ink' : 'border-line bg-surface'}`}
+              className={`chip min-h-14 rounded-2xl px-5 text-left text-lg font-semibold ${d.char === c ? 'grad-panel' : 'neu-sm'}`}
             >
               {c}
             </button>
@@ -85,7 +85,7 @@ export const STEPS: Record<FlowKind, Step[]> = {
             <Stepper label="hours slept" value={d.sleepH} start={7} step={0.5} min={0} max={14} unit="h" onChange={(v) => set((x) => void (x.sleepH = v))} />
             <div className="grid grid-cols-5 gap-2">
               {[5, 6, 7, 8, 9].map((h) => (
-                <button key={h} type="button" aria-pressed={d.sleepH === h} className={`chip h-12 rounded-xl border font-semibold ${d.sleepH === h ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface'}`} onClick={() => set((x) => void (x.sleepH = h))}>
+                <button key={h} type="button" aria-pressed={d.sleepH === h} className={`chip h-12 rounded-2xl font-semibold ${d.sleepH === h ? 'neu-in text-accent' : 'neu-sm'}`} onClick={() => set((x) => void (x.sleepH = h))}>
                   {h} h
                 </button>
               ))}
@@ -217,7 +217,7 @@ export function CheckInFlow({ kind, date, startAt = 0, onClose }: { kind: FlowKi
       onClose={onClose}
       footer={
         <div className="flex items-center gap-3">
-          <button type="button" className="btn h-14 w-14 p-0" onClick={back} disabled={i === 0} aria-label="Previous question">
+          <button type="button" className="orb h-14 w-14" onClick={back} disabled={i === 0} aria-label="Previous question">
             <Icon name="left" />
           </button>
           <div className="flex grow justify-center gap-1.5" aria-label={`Question ${i + 1} of ${steps.length}`} role="img">

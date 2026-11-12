@@ -4,7 +4,7 @@ import { Icon } from './Icon';
 export function Toast() {
   const { toastMsg, dismissToast } = useApp();
   return (
-    <div aria-live="polite" className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4" style={{ bottom: 'calc(84px + env(safe-area-inset-bottom))' }}>
+    <div aria-live="polite" className="pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4" style={{ bottom: 'calc(96px + env(safe-area-inset-bottom))' }}>
       {toastMsg && (
         <div key={toastMsg.id} className="anim-in pointer-events-auto flex max-w-md items-center gap-3 rounded-2xl bg-ink py-2 pl-4 pr-2 text-bg shadow-lg" role="status">
           <span className="grow text-[0.95rem]">{toastMsg.text}</span>

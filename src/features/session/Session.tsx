@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../../ui/app-context';
-import { PainScale, Seg, Sheet, StatusBox } from '../../ui/controls';
+import { Disclosure, PainScale, Seg, Sheet, StatusBox } from '../../ui/controls';
 import { Icon } from '../../ui/Icon';
 import { go } from '../../ui/route';
 import { useDayEdit } from '../../ui/useEdit';
@@ -25,11 +25,12 @@ function useNow(active: boolean) {
   return now;
 }
 
-export function Session({ date }: { date: string }) {
+export function Session({ date, startEx }: { date: string; startEx?: string }) {
   const { prio, settings, days, dayList } = useApp();
   const edit = useDayEdit();
-  const queue = prio;
-  const [exIdx, setExIdx] = useState(0);
+  // Start at a chosen exercise; a non-priority exercise gets a session of its own
+  const queue: ExKey[] = startEx && !prio.includes(startEx as ExKey) && startEx in EX ? [startEx as ExKey] : prio;
+  const [exIdx, setExIdx] = useState(() => Math.max(0, queue.indexOf(startEx as ExKey)));
   const [stage, setStage] = useState<Stage>('intro');
   const [setNo, setSetNo] = useState(0); // sets completed for current exercise
   const [startAt, setStartAt] = useState(0);
@@ -89,6 +90,15 @@ export function Session({ date }: { date: string }) {
     } else setStage('pain');
   };
 
+  const jump = (i: number) => {
+    if (i < 0 || i >= queue.length) return;
+    setExIdx(i);
+    setSetNo(0);
+    setReps(0);
+    setPausedAt(null);
+    setStage('intro');
+  };
+
   const endSet = (log: Omit<SetLog, 'at'>) => {
     cue('end');
     saveSet(log);
@@ -145,123 +155,159 @@ export function Session({ date }: { date: string }) {
       </Sheet>
     );
 
-  const title = stage === 'pain' || stage === 'finish' ? 'Session complete' : `${exIdx + 1} of ${queue.length} · ${k ? EX[k].name : ''}`;
-  const footerBtns = (
-    <div className="flex gap-3">
-      {(stage === 'work' || stage === 'rest') && (
-        <button type="button" className="btn h-14 grow" onClick={pausedAt ? resume : pause}>
-          <Icon name={pausedAt ? 'play' : 'pause'} /> {pausedAt ? 'Resume' : 'Pause'}
-        </button>
-      )}
-      {stage === 'rest' && (
-        <button type="button" className="btn btn-primary h-14 grow" onClick={() => begin('ready')}>
-          <Icon name="skip" /> Skip rest
-        </button>
-      )}
-      {stage === 'work' && target?.kind === 'hold' && (
-        <button type="button" className="btn h-14 grow" onClick={() => endSet({ holdS: Math.round(elapsed) })}>
-          End hold early
-        </button>
-      )}
-      {stage === 'work' && target?.kind === 'tempo' && (
-        <button type="button" className="btn h-14 grow" onClick={() => endSet({ reps: Math.floor(elapsed / (2 * HALF_S)) })}>
-          End set
-        </button>
-      )}
-    </div>
-  );
+  const title = stage === 'pain' || stage === 'finish' ? 'Session complete' : `Exercise ${exIdx + 1} of ${queue.length}`;
+  const playing = (stage === 'ready' || stage === 'work' || stage === 'rest') && pausedAt === null;
+  const inSet = stage === 'ready' || stage === 'work' || stage === 'rest';
+  const total = stage === 'ready' ? READY_S : stage === 'rest' ? restS : target?.kind === 'hold' ? holdS : target?.kind === 'tempo' ? target.reps * 2 * HALF_S : 0;
+  const mainAction = () => {
+    if (!target) return;
+    unlockAudio();
+    if (stage === 'intro') return target.kind === 'reps' ? begin('work') : begin('ready');
+    if (stage === 'work' && target.kind === 'reps') return endSet({ reps });
+    return pausedAt ? resume() : pause();
+  };
+  const mainLabel =
+    stage === 'intro' ? `Start set ${setNo + 1}` : stage === 'work' && target?.kind === 'reps' ? `Set done (${reps} reps)` : pausedAt ? 'Resume' : 'Pause';
+  const mainIcon = stage === 'intro' || pausedAt ? 'play' : stage === 'work' && target?.kind === 'reps' ? 'check' : 'pause';
+
+  const showPlayer = k && target && stage !== 'pain' && stage !== 'finish';
 
   return (
-    <Sheet title={title} onClose={() => go('today', date)} footer={stage === 'work' || stage === 'rest' ? footerBtns : undefined}>
-      {k && target && stage === 'intro' && (
-        <div className="anim-in flex flex-col gap-4">
-          <div>
+    <Sheet title={title} onClose={() => go('today', date)}>
+      {showPlayer && (
+        <div className="anim-in flex flex-col items-center gap-5">
+          <div className="text-center">
             <h3 className="text-2xl">{EX[k].name}</h3>
-            <p className="hint">
+            <p className="hint mt-1">
               {EX[k].target} ·{' '}
               {target.kind === 'hold'
-                ? `${target.sets} holds of ${holdS} s, ${restS} s rest`
+                ? `${target.sets} holds of ${holdS} s`
                 : target.kind === 'tempo'
-                  ? `${target.sets} sets of ${target.reps}, 3 s down and 3 s up`
-                  : `${target.sets} sets of about ${target.reps} reps`}
-              {setNo > 0 && ` · ${setNo} done`}
+                  ? `${target.sets} × ${target.reps}, 3 s down, 3 s up`
+                  : `${target.sets} × about ${target.reps} reps`}
             </p>
           </div>
-          <ExerciseHowTo k={k} mode={mode} />
-          {target.kind === 'hold' && (
-            <div className="flex flex-col gap-2">
-              <div className="label">Hold length</div>
-              <Seg label="Hold length" options={[30, 35, 40, 45].map((s) => ({ v: String(s), label: `${s} s` }))} value={String(holdS)} onChange={(v) => void patchSettings({ holdS: Number(v) })} />
+
+          {stage === 'work' && target.kind === 'reps' ? (
+            <button
+              type="button"
+              aria-label={`Count a rep, ${reps} so far`}
+              onClick={() => {
+                haptic(settings.haptics);
+                beep(settings.sound, 520, 50, 0.08);
+                setReps(reps + 1);
+              }}
+              className="w-full max-w-[19rem] select-none"
+            >
+              <Vinyl frac={Math.min(1, reps / target.reps)} big={String(reps)} label="Tap per rep" sub={`target ${target.reps}`} spinning={false} />
+            </button>
+          ) : stage === 'work' && target.kind === 'tempo' ? (
+            <Tempo elapsed={elapsed} reps={target.reps} cue={EX[k].cue} sub="" />
+          ) : (
+            <div className="w-full max-w-[19rem]" role="timer" aria-label={stage === 'intro' ? 'Ready' : `${stage === 'rest' ? 'Rest' : stage === 'ready' ? 'Get into position' : 'Hold'}, ${Math.max(0, Math.ceil(total - elapsed))} seconds left`}>
+              <Vinyl
+                frac={stage === 'intro' ? 0 : elapsed / total}
+                big={stage === 'intro' ? `${setNo}/${target.sets}` : String(Math.max(stage === 'ready' ? 1 : 0, Math.ceil(total - elapsed)))}
+                label={stage === 'intro' ? 'Sets done' : stage === 'rest' ? 'Rest' : stage === 'ready' ? 'Get into position' : 'Hold'}
+                sub={stage === 'intro' ? 'Press play' : 'seconds'}
+                spinning={playing && stage === 'work'}
+              />
             </div>
           )}
-          <label className="flex flex-col gap-1">
-            <span className="label">Load</span>
-            <input className="field-input" value={load} onChange={(e) => setLoad(e.target.value)} placeholder="e.g. 2 kg, or green band" />
-          </label>
-          <button
-            type="button"
-            className="btn btn-primary min-h-16 text-xl"
-            onClick={() => {
-              unlockAudio();
-              if (target.kind === 'reps') begin('work');
-              else begin('ready');
-            }}
-          >
-            <Icon name="play" /> Start set {setNo + 1}
-          </button>
-          <div className="flex gap-3">
-            <button type="button" className="btn grow" onClick={() => finishExercise(false)}>
-              Skip exercise
+
+          <SetWave frac={inSet && total ? elapsed / total : stage === 'intro' ? 0 : reps / (target.reps || 1)} left={inSet ? fmtS(elapsed) : `Set ${setNo + 1}`} right={inSet ? fmtS(total) : `of ${target.sets}`} />
+
+          <div className="flex w-full items-center justify-center gap-5">
+            <button type="button" className="orb h-14 w-14" aria-label="Previous exercise" disabled={exIdx === 0 || inSet} onClick={() => jump(exIdx - 1)}>
+              <Icon name="skip" size={20} className="rotate-180" />
             </button>
-            {setNo > 0 && (
-              <button type="button" className="btn grow" onClick={() => finishExercise(true)}>
+            <button type="button" className="orb orb-ring h-24 w-24 text-accent" aria-label={mainLabel} onClick={mainAction}>
+              <Icon name={mainIcon} size={34} />
+            </button>
+            <button type="button" className="orb h-14 w-14" aria-label="Next exercise" disabled={inSet} onClick={() => (exIdx < queue.length - 1 ? jump(exIdx + 1) : finishExercise(setNo > 0))}>
+              <Icon name="skip" size={20} />
+            </button>
+          </div>
+          <p className="-mt-2 text-sm font-semibold text-muted" aria-hidden>
+            {mainLabel}
+          </p>
+
+          <div className="flex w-full flex-wrap justify-center gap-3">
+            {stage === 'rest' && (
+              <button type="button" className="btn" onClick={() => begin('ready')}>
+                Skip rest
+              </button>
+            )}
+            {stage === 'work' && target.kind === 'hold' && (
+              <button type="button" className="btn" onClick={() => endSet({ holdS: Math.round(elapsed) })}>
+                End hold early
+              </button>
+            )}
+            {stage === 'work' && target.kind === 'tempo' && (
+              <button type="button" className="btn" onClick={() => endSet({ reps: Math.floor(elapsed / (2 * HALF_S)) })}>
+                End set
+              </button>
+            )}
+            {stage === 'work' && target.kind === 'reps' && reps > 0 && (
+              <button type="button" className="btn" onClick={() => setReps(reps - 1)}>
+                Remove a rep
+              </button>
+            )}
+            {stage === 'intro' && setNo > 0 && (
+              <button type="button" className="btn" onClick={() => finishExercise(true)}>
                 Finish with {setNo} set{setNo > 1 ? 's' : ''}
               </button>
             )}
+            {stage === 'intro' && (
+              <button type="button" className="btn" onClick={() => finishExercise(false)}>
+                Skip exercise
+              </button>
+            )}
+          </div>
+
+          {stage === 'intro' && (
+            <div className="flex w-full flex-col gap-3">
+              {target.kind === 'hold' && (
+                <div className="flex flex-col gap-2">
+                  <div className="label">Hold length</div>
+                  <Seg label="Hold length" options={[30, 35, 40, 45].map((x) => ({ v: String(x), label: `${x} s` }))} value={String(holdS)} onChange={(v) => void patchSettings({ holdS: Number(v) })} />
+                </div>
+              )}
+              <label className="flex flex-col gap-1">
+                <span className="label">Load</span>
+                <input className="field-input" value={load} onChange={(e) => setLoad(e.target.value)} placeholder="e.g. 2 kg, or green band" />
+              </label>
+              <Disclosure summary="How to do it">
+                <ExerciseHowTo k={k} mode={mode} />
+              </Disclosure>
+            </div>
+          )}
+
+          <div className="grad-panel w-full rounded-[26px] p-2">
+            <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-white/85">Up next</p>
+            <ul>
+              {queue.map((q, i) => {
+                const cur = i === exIdx;
+                const n = day.sets?.[q]?.length ?? 0;
+                return (
+                  <li key={q} className={`rounded-2xl border-b border-white/15 last:border-b-0 ${cur ? 'bg-white/12' : ''}`}>
+                    <button type="button" disabled={inSet} onClick={() => jump(i)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left">
+                      <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-white/90 text-[var(--grad-b)]">
+                        <Icon name={day.done?.[q] ? 'check' : cur && playing ? 'pause' : 'play'} size={16} />
+                      </span>
+                      <span className="min-w-0 grow">
+                        <span className="block font-semibold">{EX[q].name}</span>
+                        <span className="block text-[0.8rem] text-white/85">{EX[q].target}</span>
+                      </span>
+                      <span className="tabular text-sm text-white/85">{n ? `${n} set${n > 1 ? 's' : ''}` : ''}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
       )}
-
-      {stage === 'ready' && (
-        <BigTimer label="Get into position" value={Math.max(1, Math.ceil(READY_S - elapsed))} frac={elapsed / READY_S} sub={`Set ${setNo + 1} of ${target?.sets}`} />
-      )}
-
-      {stage === 'work' && target?.kind === 'hold' && (
-        <BigTimer label="Hold" value={Math.max(0, Math.ceil(holdS - elapsed))} frac={elapsed / holdS} sub={`Set ${setNo + 1} of ${target.sets}${pausedAt ? ' · paused' : ''}`} unit="s" />
-      )}
-
-      {stage === 'work' && target?.kind === 'tempo' && k && <Tempo elapsed={elapsed} reps={target.reps} cue={EX[k].cue} sub={`Set ${setNo + 1} of ${target.sets}${pausedAt ? ' · paused' : ''}`} />}
-
-      {stage === 'work' && target?.kind === 'reps' && (
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-sm font-semibold uppercase tracking-wide text-muted">
-            Set {setNo + 1} of {target.sets} · target {target.reps}
-          </p>
-          <button
-            type="button"
-            aria-label={`Count a rep, ${reps} so far`}
-            onClick={() => {
-              haptic(settings.haptics);
-              beep(settings.sound, 520, 50, 0.08);
-              setReps(reps + 1);
-            }}
-            className="grid aspect-square w-full max-w-80 place-items-center rounded-full border-4 border-accent bg-accent-soft font-display text-8xl font-bold text-accent select-none"
-          >
-            <span className="tabular">{reps}</span>
-          </button>
-          <p className="hint">Tap the circle for each rep.</p>
-          <div className="flex w-full gap-3">
-            <button type="button" className="btn h-14 w-20" disabled={reps === 0} onClick={() => setReps(reps - 1)} aria-label="Remove a rep">
-              <Icon name="minus" />
-            </button>
-            <button type="button" className="btn btn-primary h-14 grow" onClick={() => endSet({ reps })}>
-              Set done ({reps} reps)
-            </button>
-          </div>
-        </div>
-      )}
-
-      {stage === 'rest' && <BigTimer label="Rest" value={Math.max(0, Math.ceil(restS - elapsed))} frac={elapsed / restS} sub={`Next: set ${setNo + 1} of ${target?.sets}${pausedAt ? ' · paused' : ''}`} unit="s" tone="muted" />}
 
       {stage === 'pain' && (
         <div className="anim-in flex flex-col gap-4">
@@ -307,27 +353,81 @@ export function Session({ date }: { date: string }) {
   );
 }
 
-function BigTimer({ label, value, frac, sub, unit, tone = 'accent' }: { label: string; value: number; frac: number; sub: string; unit?: string; tone?: 'accent' | 'muted' }) {
-  const r = 120;
-  const c = 2 * Math.PI * r;
+const fmtS = (sec: number) => {
+  const t = Math.max(0, Math.floor(sec));
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+};
+
+/** The hold timer drawn as a record: soft halo lines, grooved disc, gradient progress arc, glowing label. */
+function Vinyl({ frac, big, label, sub, spinning }: { frac: number; big: string; label: string; sub: string; spinning: boolean }) {
   const f = Math.min(1, Math.max(0, frac));
-  const color = tone === 'accent' ? 'var(--accent)' : 'var(--muted)';
+  const R = 128;
+  const C = 2 * Math.PI * R;
   return (
-    <div className="flex flex-col items-center gap-3 py-2" role="timer" aria-live="off" aria-label={`${label}, ${value} ${unit === 's' ? 'seconds' : ''} left`}>
-      <p className="text-sm font-semibold uppercase tracking-wide text-muted">{sub}</p>
-      <div className="relative w-full max-w-80">
-        <svg viewBox="0 0 280 280" className="w-full -rotate-90" aria-hidden>
-          <circle cx={140} cy={140} r={r} fill="none" stroke="var(--line)" strokeWidth={16} />
-          <circle cx={140} cy={140} r={r} fill="none" stroke={color} strokeWidth={16} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * f} style={{ transition: 'stroke-dashoffset 100ms linear' }} />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-display text-2xl font-bold" style={{ color }}>
-            {label}
-          </span>
-          <span className="tabular font-display text-8xl font-bold leading-none">{value}</span>
-          {unit && <span className="text-lg text-muted">seconds</span>}
-        </div>
+    <svg viewBox="0 0 300 300" className="block w-full" aria-hidden>
+      <defs>
+        <linearGradient id="vy-disc" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="var(--surface)" />
+          <stop offset="0.55" stopColor="color-mix(in srgb, var(--grad-a) 35%, var(--surface))" />
+          <stop offset="1" stopColor="color-mix(in srgb, #4d7bd8 45%, var(--bg))" />
+        </linearGradient>
+        <linearGradient id="vy-arc" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#5aa7ff" />
+          <stop offset="0.5" stopColor="var(--grad-a)" />
+          <stop offset="1" stopColor="#e070d0" />
+        </linearGradient>
+        <radialGradient id="vy-label" cx="0.5" cy="0.45" r="0.6">
+          <stop offset="0" stopColor="#4a2f9a" />
+          <stop offset="0.6" stopColor="#2a1f66" />
+          <stop offset="1" stopColor="#141a40" />
+        </radialGradient>
+        <filter id="vy-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+      </defs>
+      <g className={spinning ? 'vy-spin' : ''} style={{ transformOrigin: '150px 150px' }} opacity="0.75">
+        {[0, 35, 70, 115].map((a, i) => (
+          <ellipse key={a} cx="150" cy="150" rx={140 - i * 2} ry={128 + i * 3} fill="none" stroke="var(--hi)" strokeWidth="1.2" transform={`rotate(${a} 150 150)`} />
+        ))}
+        <ellipse cx="150" cy="150" rx="142" ry="124" fill="none" stroke="var(--grad-a)" strokeOpacity="0.25" strokeWidth="1" transform="rotate(150 150 150)" />
+      </g>
+      <circle cx="150" cy="150" r="118" fill="url(#vy-disc)" style={{ filter: 'drop-shadow(6px 8px 10px var(--lo))' }} />
+      {[108, 100, 92, 84, 76].map((r) => (
+        <circle key={r} cx="150" cy="150" r={r} fill="none" stroke="var(--hi)" strokeOpacity="0.5" strokeWidth="0.8" />
+      ))}
+      <circle cx="150" cy="150" r={R} fill="none" stroke="var(--line)" strokeWidth="4" />
+      <circle cx="150" cy="150" r={R} fill="none" stroke="url(#vy-arc)" strokeWidth="5" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - f)} transform="rotate(-90 150 150)" style={{ transition: 'stroke-dashoffset 100ms linear' }} />
+      <circle cx="150" cy="150" r="68" fill="url(#vy-label)" />
+      <circle cx="150" cy="150" r="52" fill="none" stroke="#ff7ad9" strokeWidth="3" filter="url(#vy-glow)" opacity="0.9" />
+      <circle cx="150" cy="150" r="52" fill="none" stroke="#ffc2f0" strokeWidth="1" opacity="0.8" />
+      <text x="150" y="128" textAnchor="middle" fontSize="12" fontWeight="600" fill="#e6dcff">
+        {label}
+      </text>
+      <text x="150" y="166" textAnchor="middle" fontSize={big.length > 3 ? 34 : 44} fontWeight="700" fill="#fff" style={{ fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
+        {big}
+      </text>
+      <text x="150" y="184" textAnchor="middle" fontSize="11" fill="#d9cffa">
+        {sub}
+      </text>
+    </svg>
+  );
+}
+
+/** Waveform-style progress through the current set, as in a track scrubber. */
+function SetWave({ frac, left, right }: { frac: number; left: string; right: string }) {
+  const N = 44;
+  const f = Math.min(1, Math.max(0, frac));
+  return (
+    <div className="flex w-full items-center gap-3" aria-hidden>
+      <span className="tabular w-12 text-right text-xs text-muted">{left}</span>
+      <div className="flex h-9 grow items-center gap-[3px]">
+        {Array.from({ length: N }, (_, i) => {
+          const h = 0.25 + 0.75 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.45));
+          const on = i / N < f;
+          return <span key={i} className="flex-1 rounded-full" style={{ height: `${h * 100}%`, background: on ? 'linear-gradient(var(--grad-a), #e070d0)' : 'var(--line)' }} />;
+        })}
       </div>
+      <span className="tabular w-12 text-xs text-muted">{right}</span>
     </div>
   );
 }

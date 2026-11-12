@@ -30,24 +30,28 @@ export function App() {
   const tab = route.tab === 'tests' ? 'more' : route.tab;
   const dayN = Math.max(1, diffDays(settings.start, today) + 1);
 
-  if (route.tab === 'session') return <Session date={route.arg && route.arg <= today ? route.arg : today} />;
+  if (route.tab === 'session') {
+    // #/session/<date>[/<exercise>]
+    const [d, ex] = (route.arg ?? '').split('/');
+    return <Session date={d && d <= today ? d : today} startEx={ex} />;
+  }
 
   return (
     <div className="min-h-dvh">
-      <header className="safe-top sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
+      <header className="safe-top sticky top-0 z-20 bg-bg/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
-            <h1 className="text-xl">Elbow Rehab</h1>
+            <h1 className="text-xl tracking-tight">Elbow Rehab</h1>
             <p className="truncate text-sm text-muted">
               {settings.side} elbow · day {dayN} · {sync}
             </p>
           </div>
-          <button type="button" className="pill min-h-10 px-3" onClick={() => go('plan')}>
+          <button type="button" className="neu-sm min-h-11 rounded-full px-4 text-sm font-semibold text-accent" onClick={() => go('plan')}>
             {PHASES[settings.phase].name}
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-2xl px-4 pt-4" style={{ paddingBottom: 'calc(96px + env(safe-area-inset-bottom))' }}>
+      <main className="mx-auto max-w-2xl px-4 pt-4" style={{ paddingBottom: 'calc(110px + env(safe-area-inset-bottom))' }}>
         {!ready ? (
           <p className="hint py-10 text-center">Loading…</p>
         ) : (
@@ -61,8 +65,8 @@ export function App() {
           </Suspense>
         )}
       </main>
-      <nav aria-label="Sections" className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface">
-        <div className="mx-auto flex max-w-2xl">
+      <nav aria-label="Sections" className="safe-bottom pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-2">
+        <div className="neu pointer-events-auto mx-auto flex max-w-2xl gap-1 rounded-[28px] p-1.5">
           {TABS.map(([id, label, icon]) => {
             const on = tab === id;
             return (
@@ -71,7 +75,7 @@ export function App() {
                 type="button"
                 aria-current={on ? 'page' : undefined}
                 onClick={() => go(id)}
-                className={`flex min-h-16 flex-1 flex-col items-center justify-center gap-0.5 text-xs font-semibold ${on ? 'text-accent' : 'text-muted'}`}
+                className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-[22px] text-xs font-semibold ${on ? 'neu-in text-accent' : 'text-muted'}`}
               >
                 <Icon name={icon} size={24} />
                 {label}

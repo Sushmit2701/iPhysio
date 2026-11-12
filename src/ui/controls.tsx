@@ -48,8 +48,8 @@ export function PainScale({
               haptic(settings.haptics);
               onChange(v);
             }}
-            className={`chip tabular rounded-xl border font-display font-bold select-none ${size === 'lg' ? 'h-14 text-2xl' : 'h-12 text-xl'} ${
-              on ? 'border-transparent text-white shadow-[0_0_0_3px_var(--surface),0_0_0_5px_var(--ink)]' : 'border-line bg-surface text-ink'
+            className={`chip tabular rounded-2xl font-display font-bold select-none ${size === 'lg' ? 'h-14 text-2xl' : 'h-12 text-xl'} ${
+              on ? 'text-white shadow-[inset_3px_3px_7px_rgba(0,0,0,0.25),0_0_0_3px_var(--bg),0_0_0_5px_var(--ink)]' : 'neu-sm text-ink'
             }`}
             style={on ? { background: fill(v) } : undefined}
           >
@@ -93,8 +93,8 @@ export function Seg<T extends string>({
               haptic(settings.haptics);
               onChange(v);
             }}
-            className={`chip min-h-12 rounded-xl border px-3 py-1 font-semibold leading-tight ${options.length > 4 ? 'grow basis-auto' : ''} ${
-              on ? 'border-accent bg-accent text-accent-ink' : 'border-line bg-surface text-ink'
+            className={`chip min-h-12 rounded-2xl px-3 py-1 font-semibold leading-tight ${options.length > 4 ? 'grow basis-auto' : ''} ${
+              on ? 'grad-panel shadow-[inset_3px_3px_7px_rgba(0,0,0,0.22)]' : 'neu-sm text-ink'
             }`}
           >
             {l}
@@ -117,16 +117,12 @@ export function Toggle({ on, onChange, children, tone = 'accent' }: { on: boolea
         haptic(settings.haptics);
         onChange(!on);
       }}
-      className="chip flex min-h-14 w-full items-center gap-3 rounded-xl border px-4 text-left font-medium"
-      style={{
-        borderColor: on ? c : 'var(--line)',
-        background: on ? `color-mix(in srgb, ${c} 14%, var(--surface))` : 'var(--surface)',
-      }}
+      className="chip neu-sm flex min-h-14 w-full items-center gap-3 rounded-2xl px-4 text-left font-medium"
     >
       <span
         aria-hidden
-        className="relative h-7 w-12 flex-none rounded-full transition-colors"
-        style={{ background: on ? c : 'var(--line)' }}
+        className="neu-in relative h-7 w-12 flex-none rounded-full transition-colors"
+        style={on ? { background: tone === 'bad' ? c : 'linear-gradient(145deg, var(--grad-a), var(--grad-b))', boxShadow: 'inset 2px 2px 5px rgba(0,0,0,0.25)' } : undefined}
       >
         <span className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-[left]" style={{ left: on ? 22 : 2 }} />
       </span>
@@ -162,14 +158,14 @@ export function Stepper({
   };
   return (
     <div className="flex items-center gap-3" role="group" aria-label={label}>
-      <button type="button" className="btn h-14 w-14 p-0" aria-label={`Less ${label}`} onClick={() => set(-step)}>
+      <button type="button" className="orb h-14 w-14" aria-label={`Less ${label}`} onClick={() => set(-step)}>
         <Icon name="minus" />
       </button>
       <output aria-live="polite" className="tabular grow text-center font-display text-4xl font-bold">
         {value ?? '–'}
         {value != null && unit ? <span className="ml-1 text-lg font-semibold text-muted">{unit}</span> : null}
       </output>
-      <button type="button" className="btn h-14 w-14 p-0" aria-label={`More ${label}`} onClick={() => set(step)}>
+      <button type="button" className="orb h-14 w-14" aria-label={`More ${label}`} onClick={() => set(step)}>
         <Icon name="plus" />
       </button>
     </div>
@@ -195,8 +191,8 @@ export function StatusBox({ tone, title, children, icon }: { tone: Tone; title: 
   const c = tone === 'ok' ? 'var(--good)' : tone === 'mid' ? 'var(--warn)' : tone === 'hi' ? 'var(--bad)' : tone === 'info' ? 'var(--accent)' : 'var(--line)';
   return (
     <div
-      className="flex gap-3 rounded-2xl border p-4"
-      style={{ borderColor: c, background: tone === 'none' ? 'var(--surface-2)' : `color-mix(in srgb, ${c} 12%, var(--surface))` }}
+      className="neu-sm flex gap-3 rounded-3xl border-l-4 p-4"
+      style={{ borderColor: c, background: tone === 'none' ? undefined : `color-mix(in srgb, ${c} 10%, var(--surface))` }}
     >
       {icon && (
         <span style={{ color: tone === 'none' ? 'var(--muted)' : c }} className="mt-0.5 flex-none">
@@ -213,7 +209,7 @@ export function StatusBox({ tone, title, children, icon }: { tone: Tone; title: 
 
 export function Tile({ n, label }: { n: ReactNode; label: ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-2xl border border-line bg-surface p-3">
+    <div className="neu flex flex-col gap-0.5 rounded-3xl p-4">
       <span className="tabular font-display text-3xl font-bold leading-tight">{n}</span>
       <span className="text-sm text-muted">{label}</span>
     </div>
@@ -233,10 +229,10 @@ export function Sheet({ title, onClose, children, footer, labelledBy = 'sheet-ti
     };
   }, [onClose]);
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby={labelledBy} className="fixed inset-0 z-40 flex flex-col bg-bg">
-      <header className="safe-top border-b border-line bg-surface">
+    <div role="dialog" aria-modal="true" aria-labelledby={labelledBy} className="fixed inset-0 z-40 flex flex-col bg-bg" style={{ background: 'radial-gradient(120% 70% at 0% 0%, var(--surface), var(--bg) 60%)' }}>
+      <header className="safe-top">
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-2 py-2">
-          <button type="button" className="btn btn-ghost h-12 w-12 p-0" onClick={onClose} aria-label="Close">
+          <button type="button" className="orb h-12 w-12 flex-none" onClick={onClose} aria-label="Close">
             <Icon name="close" />
           </button>
           <h2 id={labelledBy} className="grow truncate text-lg">
@@ -248,7 +244,7 @@ export function Sheet({ title, onClose, children, footer, labelledBy = 'sheet-ti
         <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-4">{children}</div>
       </div>
       {footer && (
-        <footer className="safe-bottom border-t border-line bg-surface">
+        <footer className="safe-bottom">
           <div className="mx-auto max-w-2xl px-4 py-3">{footer}</div>
         </footer>
       )}

@@ -25,7 +25,7 @@ export default function More({ section }: { section?: string }) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2">
-          <button type="button" className="btn btn-ghost h-12 w-12 p-0" aria-label="Back to More" onClick={() => go('more')}>
+          <button type="button" className="orb h-12 w-12" aria-label="Back to More" onClick={() => go('more')}>
             <Icon name="left" />
           </button>
           <h2 className="text-2xl">{s[1]}</h2>
@@ -42,7 +42,7 @@ export default function More({ section }: { section?: string }) {
     <nav aria-label="More" className="card flex flex-col p-0">
       {SECTIONS.map(([id, title, sub, icon]) => (
         <button key={id} type="button" onClick={() => (id === 'tests' ? go('tests') : go('more', id))} className="flex min-h-16 items-center gap-4 border-t border-line px-4 py-3 text-left first:border-t-0">
-          <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-accent-soft text-accent">
+          <span className="neu-sm grid h-11 w-11 flex-none place-items-center rounded-full text-accent">
             <Icon name={icon} />
           </span>
           <span className="flex grow flex-col">

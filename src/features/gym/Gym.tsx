@@ -37,17 +37,17 @@ export default function Gym() {
         title="Training days"
         action={
           <div className="flex gap-1">
-            <button type="button" className="btn h-12 w-12 p-0" aria-label="Earlier weeks" onClick={() => setWeeksBack(weeksBack + 1)}>
+            <button type="button" className="orb h-12 w-12" aria-label="Earlier weeks" onClick={() => setWeeksBack(weeksBack + 1)}>
               <Icon name="left" />
             </button>
-            <button type="button" className="btn h-12 w-12 p-0" aria-label="Later weeks" disabled={weeksBack === 0} onClick={() => setWeeksBack(weeksBack - 1)}>
+            <button type="button" className="orb h-12 w-12" aria-label="Later weeks" disabled={weeksBack === 0} onClick={() => setWeeksBack(weeksBack - 1)}>
               <Icon name="right" />
             </button>
           </div>
         }
       >
         <p className="hint">Tap a day to tick it as a training day. The bar under each day is that day’s peak pain.</p>
-        <div className="grid grid-cols-7 gap-1" role="group" aria-label="Training calendar">
+        <div className="grid grid-cols-7 gap-1.5" role="group" aria-label="Training calendar">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
             <div key={d} className="pb-1 text-center text-xs font-semibold text-muted">
               {d}
@@ -71,8 +71,8 @@ export default function Gym() {
                   void edit(d, (x) => void (x.gym = !on), `${weekdayDate(d)}: ${on ? 'rest day' : 'training day'}`);
                   setSel(on ? null : d);
                 }}
-                className={`relative flex min-h-14 flex-col items-center justify-center rounded-xl border pb-2 pt-1 font-semibold tabular ${
-                  on ? 'border-accent bg-accent text-accent-ink' : 'border-line bg-surface'
+                className={`relative flex min-h-14 flex-col items-center justify-center rounded-2xl pb-2 pt-1 font-semibold tabular ${
+                  on ? 'grad-panel shadow-[inset_2px_2px_6px_rgba(0,0,0,0.25)]' : 'neu-sm'
                 } ${d === today ? 'ring-2 ring-ink ring-offset-1 ring-offset-surface' : ''} ${fut ? 'opacity-35' : ''} ${sel === d ? 'outline outline-2 outline-offset-2 outline-accent' : ''}`}
               >
                 {parseD(d).getDate()}
@@ -84,7 +84,7 @@ export default function Gym() {
         </div>
         <p className="text-xs text-muted">L legs · Ps push · Pl pull · U upper · F full body · O other</p>
         {sel && selDay?.gym && (
-          <div className="anim-in flex flex-col gap-3 rounded-2xl bg-surface-2 p-4">
+          <div className="neu-in anim-in flex flex-col gap-3 rounded-3xl p-4">
             <div className="flex items-center justify-between">
               <b>{weekdayDate(sel)}</b>
               <button type="button" className="btn btn-ghost min-h-10 px-2" onClick={() => setSel(null)}>
@@ -171,7 +171,7 @@ export default function Gym() {
         </p>
         <ul className="flex flex-col gap-2">
           {split.avoid.map((a) => (
-            <li key={a.k} className="rounded-xl bg-surface-2 p-3 text-[0.95rem]">
+            <li key={a.k} className="neu-in rounded-2xl p-3 text-[0.95rem]">
               <b>{TNAME[a.k]}:</b> avoid {a.avoid.charAt(0).toLowerCase() + a.avoid.slice(1)}. <span className="text-muted">Instead: {a.swap}.</span>
             </li>
           ))}

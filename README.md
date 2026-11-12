@@ -153,6 +153,8 @@ e2e/           Playwright tests
 
 **Choices that differ from the brief:**
 
+- **Look:** a soft neumorphic, music-player style (raised and pressed surfaces, violet accent, round controls, the hold timer drawn as a record) in place of the brief's teal accent, as requested later. The green-to-red ramp is still used only for pain values, and every screen scores 100 on Lighthouse accessibility.
+
 - **Hand-written SVG charts instead of Recharts or visx.** A few KB instead of roughly 100 KB, and full control of tap-and-drag inspection on touch, a keyboard path, and a data-table fallback.
 - **Hash routing, no router library.** Works on GitHub Pages without rewrites and offline.
 - **Email code alongside the magic link,** because the link would sign in Safari, not the home-screen app.

@@ -71,7 +71,7 @@ export function Chart({ label, dates, series, ymin = 0, ymax, ticks, refs = [], 
   const xLabels = Math.min(W < 420 ? 4 : 6, n);
   return (
     <div className="flex flex-col gap-2">
-      <div className="min-h-12 rounded-xl bg-surface-2 px-3 py-2 text-sm" aria-live="polite">
+      <div className="neu-in min-h-12 rounded-2xl px-3 py-2 text-sm" aria-live="polite">
         {sel === null ? (
           <span className="text-muted">Tap or drag on the chart to inspect a day.</span>
         ) : (
@@ -205,7 +205,7 @@ export function Legend({ items }: { items: { label: string; color: string; kind?
           />
         );
         return it.onToggle ? (
-          <button key={it.label} type="button" aria-pressed={!!it.on} onClick={it.onToggle} className={`chip inline-flex min-h-10 items-center gap-2 rounded-full border px-3 ${it.on ? 'border-ink text-ink' : 'border-line text-muted'}`}>
+          <button key={it.label} type="button" aria-pressed={!!it.on} onClick={it.onToggle} className={`chip inline-flex min-h-10 items-center gap-2 rounded-full px-3 ${it.on ? 'neu-in text-ink' : 'neu-sm text-muted'}`}>
             {key}
             {it.label}
           </button>
@@ -229,9 +229,9 @@ export function DataTable({ dates, series }: { dates: string[]; series: Series[]
         <table className="tabular w-full border-collapse">
           <thead>
             <tr>
-              <th className="sticky top-0 bg-surface p-1.5 text-left text-muted">Date</th>
+              <th className="sticky top-0 bg-bg p-1.5 text-left text-muted">Date</th>
               {series.map((s) => (
-                <th key={s.key} className="sticky top-0 bg-surface p-1.5 text-left text-muted">
+                <th key={s.key} className="sticky top-0 bg-bg p-1.5 text-left text-muted">
                   {s.label}
                 </th>
               ))}

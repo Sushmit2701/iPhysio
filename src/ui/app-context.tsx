@@ -67,7 +67,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     if (data.settings.theme === 'system') root.removeAttribute('data-theme');
     else root.setAttribute('data-theme', data.settings.theme);
-    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', dark ? '#0e191e' : '#f1f5f6'));
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', dark ? '#262b3d' : '#e4ebf5'));
   }, [data.settings.theme, dark]);
 
   const value = useMemo(() => ({ ...data, dark, today, toast, toastMsg, dismissToast }), [data, dark, today, toast, toastMsg, dismissToast]);

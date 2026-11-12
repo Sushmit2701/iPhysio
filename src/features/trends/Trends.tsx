@@ -180,5 +180,5 @@ export default function Trends() {
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-xl border border-dashed border-line p-5 text-center text-muted">{children}</div>;
+  return <div className="neu-in rounded-2xl p-5 text-center text-muted">{children}</div>;
 }

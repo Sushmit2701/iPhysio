@@ -51,7 +51,7 @@ export default function Data() {
         <p className="text-sm text-muted">
           {mode === 'merge' ? 'Merge keeps whichever copy of each day was edited last. Safe to run twice.' : 'Overwrite replaces any day, screen or score that is in the backup, even if this device has a newer edit.'}
         </p>
-        <input ref={fileRef} type="file" accept="application/json,.json,.txt" className="sr-only" onChange={async (e) => {
+        <input ref={fileRef} type="file" aria-label="Backup file" accept="application/json,.json,.txt" className="sr-only" onChange={async (e) => {
           const f = e.target.files?.[0];
           if (f) await doImport(await f.text());
           e.target.value = '';
