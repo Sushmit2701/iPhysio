@@ -47,7 +47,7 @@ export default function Gym() {
         }
       >
         <p className="hint">Tap a day to tick it as a training day. The bar under each day is that day’s peak pain.</p>
-        <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Training calendar">
+        <div className="grid grid-cols-7 gap-1" role="group" aria-label="Training calendar">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
             <div key={d} className="pb-1 text-center text-xs font-semibold text-muted">
               {d}
@@ -109,7 +109,9 @@ export default function Gym() {
           <table className="tabular w-full text-[0.95rem]">
             <thead>
               <tr className="text-left text-sm text-muted">
-                <th className="py-1.5 pr-2 font-semibold" />
+                <th className="py-1.5 pr-2 font-semibold">
+                  <span className="sr-only">Measure</span>
+                </th>
                 <th className="py-1.5 pr-2 font-semibold">After training</th>
                 <th className="py-1.5 font-semibold">After rest</th>
               </tr>
@@ -124,7 +126,7 @@ export default function Gym() {
                 ] as const
               ).map(([l, a, b]) => (
                 <tr key={l} className="border-t border-line">
-                  <td className="py-2 pr-2">{l}</td>
+                  <th scope="row" className="py-2 pr-2 text-left font-normal">{l}</th>
                   <td className="py-2 pr-2 font-semibold">{a}</td>
                   <td className="py-2 font-semibold">{b}</td>
                 </tr>
@@ -150,7 +152,7 @@ export default function Gym() {
               <tbody>
                 {ELBOW_LOADS.filter((e) => im.byElb[e]).map((e) => (
                   <tr key={e} className="border-t border-line">
-                    <td className="py-2">{e}</td>
+                    <th scope="row" className="py-2 text-left font-normal">{e}</th>
                     <td className="py-2">{im.byElb[e]!.n}</td>
                     <td className="py-2 font-semibold">{f(im.byElb[e]!.am)}</td>
                     <td className="py-2 font-semibold">{f(im.byElb[e]!.p48)}</td>

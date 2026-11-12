@@ -82,7 +82,6 @@ export function Today({ date: dateArg }: { date?: string }) {
               type="button"
               onClick={() => setFlow({ kind: k, at: complete ? 0 : firstOpenStep(k, day) })}
               className="card flex w-full min-w-0 items-center gap-4 text-left"
-              aria-label={`${k === 'morning' ? 'Morning' : 'Evening'} check-in, ${s.done} of ${s.total} answered`}
             >
               <span className="grid h-12 w-12 flex-none place-items-center rounded-full" style={{ background: complete ? 'var(--accent)' : 'var(--accent-soft)', color: complete ? 'var(--accent-ink)' : 'var(--accent)' }}>
                 <Icon name={complete ? 'check' : k === 'morning' ? 'sun' : 'moon'} />
@@ -93,6 +92,7 @@ export function Today({ date: dateArg }: { date?: string }) {
               </span>
               <span className="tabular text-sm font-semibold text-muted">
                 {s.done}/{s.total}
+                <span className="sr-only"> answered</span>
               </span>
             </button>
           );
