@@ -19,8 +19,9 @@ const oneOf = <T extends string>(list: readonly T[], v: unknown) => (list.includ
 const str = (v: unknown, max = 5000) => (typeof v === 'string' ? v.slice(0, max) : undefined);
 const timeHM = (v: unknown) => (typeof v === 'string' && /^\d{2}:\d{2}$/.test(v) ? v : undefined);
 
-function clean<T extends Obj>(o: T): T {
-  for (const k of Object.keys(o)) if (o[k] === undefined) delete o[k];
+function clean<T extends object>(o: T): T {
+  const r = o as Record<string, unknown>;
+  for (const k of Object.keys(r)) if (r[k] === undefined) delete r[k];
   return o;
 }
 
