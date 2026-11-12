@@ -9,7 +9,7 @@ import { EX, PHASES, RED_FLAGS, effectiveMode, variantFor } from '../../domain/c
 import { adherence, dueChecks, sessionDone, todayAdvice } from '../../domain/logic';
 import { patchSettings } from '../../db/repo';
 import { TEST_KEYS, type DayData, type ExKey } from '../../domain/types';
-import { CheckInFlow, NoteField, flowSummary, type FlowKind } from './CheckIn';
+import { CheckInFlow, NoteField, firstOpenStep, flowSummary, type FlowKind } from './CheckIn';
 import { ExerciseHowTo } from './ExerciseHowTo';
 import { haptic } from '../../ui/feedback';
 import { ELBOW_LOADS, GYM_TYPES } from '../../domain/types';
@@ -80,7 +80,7 @@ export function Today({ date: dateArg }: { date?: string }) {
             <button
               key={k}
               type="button"
-              onClick={() => setFlow({ kind: k, at: complete ? 0 : Math.min(s.done, 99) })}
+              onClick={() => setFlow({ kind: k, at: complete ? 0 : firstOpenStep(k, day) })}
               className="card flex w-full min-w-0 items-center gap-4 text-left"
               aria-label={`${k === 'morning' ? 'Morning' : 'Evening'} check-in, ${s.done} of ${s.total} answered`}
             >

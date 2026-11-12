@@ -279,3 +279,19 @@ export function flowSummary(kind: FlowKind, d: DayData): { done: number; total: 
   if (d.flare) parts.push('flare-up');
   return { done, total: 5, text: parts.join(' · ') };
 }
+
+/** Index of the first unanswered step, so reopening a flow resumes where it was left. */
+export function firstOpenStep(kind: FlowKind, d: DayData): number {
+  const answered: Record<string, boolean> = {
+    painAM: d.painAM != null,
+    char: !!d.char,
+    sleep: d.sleepH != null || d.sleepQ != null,
+    painRehab: d.painRehab != null,
+    painWorst: d.painWorst != null,
+    painPM: d.painPM != null,
+    fn: !!d.fn && Object.values(d.fn).some((v) => v != null),
+    gym: d.gym != null,
+  };
+  const i = STEPS[kind].findIndex((s) => s.key in answered && !answered[s.key]);
+  return i < 0 ? 0 : i;
+}
