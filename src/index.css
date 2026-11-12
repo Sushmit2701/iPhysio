@@ -1,0 +1,244 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/bricolage-grotesque/wght.css';
+@import '@fontsource-variable/public-sans/wght.css';
+
+/* Soft neumorphic look: blue-grey surfaces lit from the top left, a violet accent.
+   Green-to-red stays reserved for pain values (see ui/pain.ts). */
+:root {
+  --bg: #e4ebf5;
+  --surface: #e9eff7;
+  --surface-2: #dde5f0;
+  --ink: #1d2540;
+  --muted: #56627f;
+  --line: #cdd6e4;
+  --accent: #6b4bd2;
+  --accent-ink: #ffffff;
+  --accent-soft: #e1dbfa;
+  --grad-a: #7b5ce1;
+  --grad-b: #5e40c2;
+  --hi: rgba(255, 255, 255, 0.95);
+  --lo: rgba(155, 170, 195, 0.55);
+  --good: #2b7a4b;
+  --warn: #935300;
+  --bad: #b3302a;
+  --c1: #00879e;
+  --c2: #7a4fc0;
+  --c3: #b5651d;
+  --c4: #1d2540;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #262b3d;
+    --surface: #2a3043;
+    --surface-2: #222738;
+    --ink: #e8ebf5;
+    --muted: #a3adc4;
+    --line: #3a4157;
+    --accent: #a98cff;
+    --accent-ink: #1a1430;
+    --accent-soft: #3a3360;
+    --grad-a: #6e52d6;
+    --grad-b: #4f36ad;
+    --hi: rgba(255, 255, 255, 0.06);
+    --lo: rgba(0, 0, 0, 0.45);
+    --good: #62c38a;
+    --warn: #e6a23c;
+    --bad: #ef7b73;
+    --c1: #1fa6ad;
+    --c2: #9f7ee6;
+    --c3: #c27a2c;
+    --c4: #e8ebf5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #262b3d;
+  --surface: #2a3043;
+  --surface-2: #222738;
+  --ink: #e8ebf5;
+  --muted: #a3adc4;
+  --line: #3a4157;
+  --accent: #a98cff;
+  --accent-ink: #1a1430;
+  --accent-soft: #3a3360;
+  --grad-a: #6e52d6;
+  --grad-b: #4f36ad;
+  --hi: rgba(255, 255, 255, 0.06);
+  --lo: rgba(0, 0, 0, 0.45);
+  --good: #62c38a;
+  --warn: #e6a23c;
+  --bad: #ef7b73;
+  --c1: #1fa6ad;
+  --c2: #9f7ee6;
+  --c3: #c27a2c;
+  --c4: #e8ebf5;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --font-display: 'Bricolage Grotesque Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Public Sans Variable', -apple-system, 'Segoe UI', system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* keep focused or scrolled-to items clear of the sticky header and floating tab bar */
+    scroll-padding-top: 88px;
+    scroll-padding-bottom: calc(110px + env(safe-area-inset-bottom));
+    background: var(--bg);
+  }
+  body {
+    background: radial-gradient(120% 80% at 0% 0%, var(--surface) 0%, var(--bg) 60%) fixed, var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 1.5;
+    margin: 0;
+    overscroll-behavior-y: none;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    line-height: 1.15;
+    text-wrap: balance;
+    font-weight: 700;
+  }
+  /* Every control: no 300 ms delay or double-tap zoom, no grey flash on iOS. */
+  button, a, input, select, textarea, label, [role='button'] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; }
+  input, select, textarea { font-size: 17px; } /* 16px+ stops iOS zooming on focus */
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+}
+
+@layer components {
+  /* Raised surface */
+  .neu {
+    background: linear-gradient(145deg, var(--surface), var(--bg));
+    box-shadow: 8px 8px 18px var(--lo), -8px -8px 18px var(--hi);
+  }
+  .neu-sm {
+    background: linear-gradient(145deg, var(--surface), var(--bg));
+    box-shadow: 4px 4px 9px var(--lo), -4px -4px 9px var(--hi);
+  }
+  /* Pressed-in surface */
+  .neu-in {
+    background: var(--bg);
+    box-shadow: inset 4px 4px 9px var(--lo), inset -4px -4px 9px var(--hi);
+  }
+  .grad-panel {
+    background: linear-gradient(160deg, var(--grad-a), var(--grad-b));
+    color: #fff;
+  }
+  .card {
+    background: linear-gradient(145deg, var(--surface), var(--bg));
+    box-shadow: 10px 10px 24px var(--lo), -10px -10px 24px var(--hi);
+    border-radius: 26px;
+    padding: 20px;
+  }
+  .btn {
+    min-height: 48px;
+    padding: 10px 18px;
+    border-radius: 16px;
+    border: 0;
+    background: linear-gradient(145deg, var(--surface), var(--bg));
+    box-shadow: 4px 4px 9px var(--lo), -4px -4px 9px var(--hi);
+    color: var(--ink);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .btn:active:not(:disabled) {
+    box-shadow: inset 3px 3px 7px var(--lo), inset -3px -3px 7px var(--hi);
+  }
+  .btn-primary {
+    background: linear-gradient(145deg, var(--grad-a), var(--grad-b));
+    color: #fff;
+    box-shadow: 6px 6px 14px color-mix(in srgb, var(--grad-b) 35%, transparent), -4px -4px 10px var(--hi);
+  }
+  .btn-danger { color: var(--bad); }
+  .btn-ghost { background: transparent; box-shadow: none; color: var(--accent); }
+  .btn:disabled { opacity: 0.45; box-shadow: none; }
+  /* Round player-style control */
+  .orb {
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    background: linear-gradient(145deg, var(--surface), var(--bg));
+    box-shadow: 6px 6px 14px var(--lo), -6px -6px 14px var(--hi);
+  }
+  .orb:active:not(:disabled) { box-shadow: inset 4px 4px 9px var(--lo), inset -4px -4px 9px var(--hi); }
+  .orb-ring {
+    /* thin inner ring like the reference's play button */
+    box-shadow: 6px 6px 14px var(--lo), -6px -6px 14px var(--hi), inset 0 0 0 6px var(--bg), inset 0 0 0 7px var(--line);
+  }
+  .field-input {
+    width: 100%;
+    min-height: 48px;
+    border: 0;
+    border-radius: 14px;
+    padding: 10px 14px;
+    color: var(--ink);
+    background: var(--bg);
+    box-shadow: inset 3px 3px 7px var(--lo), inset -3px -3px 7px var(--hi);
+  }
+  .label { font-weight: 600; font-size: 0.95rem; }
+  .hint { color: var(--muted); font-size: 0.875rem; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--bg);
+    box-shadow: inset 2px 2px 4px var(--lo), inset -2px -2px 4px var(--hi);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .anim-in { animation: fade-up 180ms ease-out; }
+  .btn, .chip, .orb { transition: background-color 120ms, box-shadow 140ms, transform 80ms; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .vy-spin { animation: vy-spin 24s linear infinite; }
+}
+@keyframes vy-spin { to { transform: rotate(360deg); } }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

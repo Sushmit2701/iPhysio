@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elbow Rehab Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: single-column phone-first log with a bottom tab bar; teal for actions, a green-to-red ramp only for pain values. */
+:root{
+  --bg:#f1f5f6; --surface:#ffffff; --ink:#12232b; --muted:#566b74; --line:#d8e1e5;
+  --accent:#0b6e75; --accent-ink:#ffffff; --accent-soft:#d9eef0;
+  --good:#2b7a4b; --warn:#a85f00; --bad:#b3302a;
+  --c1:#0b6e75; --c2:#7a4fc0; --c3:#c4452f; --c4:#12232b;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Public Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e191e; --surface:#162830; --ink:#e5eef1; --muted:#93a9b2; --line:#26404a;
+    --accent:#4fc3c9; --accent-ink:#06262a; --accent-soft:#17393e;
+    --good:#62c38a; --warn:#e6a23c; --bad:#ef7b73;
+    --c1:#4fc3c9; --c2:#b69bf0; --c3:#f0846c; --c4:#e5eef1; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e191e; --surface:#162830; --ink:#e5eef1; --muted:#93a9b2; --line:#26404a;
+  --accent:#4fc3c9; --accent-ink:#06262a; --accent-soft:#17393e;
+  --good:#62c38a; --warn:#e6a23c; --bad:#ef7b73;
+  --c1:#4fc3c9; --c2:#b69bf0; --c3:#f0846c; --c4:#e5eef1; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--body);padding-bottom:84px;-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h2{font-size:1.25rem}
+h3{font-size:1.02rem}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.chips,.cal,nav{touch-action:manipulation}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px}
+header{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 0 12px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.head h1{font-size:1.35rem}
+.sub{color:var(--muted);font-size:.85rem}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:.8rem;white-space:nowrap}
+main{padding-top:16px;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.tiny{font-size:.78rem}
+.grow{flex:1;min-width:0}
+.btn{min-height:44px;padding:8px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:600}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn.sm{min-height:36px;padding:4px 12px;font-weight:500}
+.ghost{background:none;border:none;color:var(--accent);font-weight:600;min-height:44px;padding:0 6px}
+.datebar{display:flex;align-items:center;gap:8px}
+.datebar .date{flex:1;text-align:center;font-family:var(--display);font-weight:600;font-size:1.1rem}
+.status{border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;border:1px solid var(--line)}
+.status b{font-family:var(--display);font-size:1.02rem}
+.status.ok{background:color-mix(in srgb,var(--good) 14%,var(--surface));border-color:var(--good)}
+.status.mid{background:color-mix(in srgb,var(--warn) 14%,var(--surface));border-color:var(--warn)}
+.status.hi{background:color-mix(in srgb,var(--bad) 13%,var(--surface));border-color:var(--bad)}
+.status.none{background:var(--bg)}
+.banner{background:var(--accent-soft);color:var(--ink);border-radius:12px;padding:10px 14px;border:1px solid var(--accent);font-weight:500}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;min-height:40px;border:none;background:var(--surface);font-weight:500;padding:4px 8px}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.ex{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.ex:first-of-type{border-top:none}
+.ex .box{width:32px;height:32px;border-radius:9px;border:2px solid var(--muted);display:grid;place-items:center;flex:none;background:var(--surface)}
+.ex input[type=checkbox]{position:absolute;opacity:0;width:44px;height:44px;margin:0}
+.chk{position:relative;display:block;width:44px;height:44px;flex:none;display:grid;place-items:center}
+.chk input:checked + .box{background:var(--accent);border-color:var(--accent)}
+.chk input:checked + .box::after{content:"";width:10px;height:18px;border:solid var(--accent-ink);border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-2px)}
+.chk input:focus-visible + .box{outline:3px solid var(--accent);outline-offset:2px}
+.exname{font-weight:600;line-height:1.3}
+.dose{color:var(--muted);font-size:.88rem}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);margin-left:6px;vertical-align:1px}
+.tag.alt{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.exbody{background:var(--bg);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;margin:0 0 8px 56px;font-size:.92rem}
+.exbody ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>label,.lab{font-weight:600;font-size:.92rem}
+.chips{display:grid;gap:6px}
+.chip{min-width:0;height:46px;font-size:1.05rem;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:600;padding:0}
+.chip.on{color:#fff;border-color:transparent}
+.opt{min-height:40px;padding:4px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-weight:500}
+.opt.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.grid2{grid-template-columns:1fr}}
+input[type=number],input[type=text],input[type=time],input[type=date],select,textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface)}
+textarea{min-height:84px;resize:vertical}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:420px){.toggles{grid-template-columns:1fr}}
+.tog{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-align:left;font-weight:500}
+.tog .dot{width:20px;height:20px;border-radius:6px;border:2px solid var(--muted);flex:none}
+.tog.on{border-color:var(--accent);background:var(--accent-soft)}
+.tog.on .dot{background:var(--accent);border-color:var(--accent)}
+.tog.flare.on{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 13%,var(--surface))}
+.tog.flare.on .dot{background:var(--bad);border-color:var(--bad)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.tile{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:2px}
+.tile .n{font-family:var(--display);font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.tile .l{color:var(--muted);font-size:.82rem}
+.chart{width:100%;height:auto;display:block}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .ax{fill:var(--muted);font-size:11px;font-family:var(--body)}
+.chart .axl{font-size:10.5px;font-family:var(--body);font-weight:600}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px;font-size:.9rem}
+.phasecard{border:2px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--surface);width:100%}
+.phasecard.on{border-color:var(--accent);background:var(--accent-soft)}
+.phasecard dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:4px 0 0;font-size:.9rem}
+.phasecard dt{color:var(--muted)}
+.phasecard dd{margin:0}
+.crit{display:flex;gap:8px;align-items:flex-start;font-size:.92rem}
+.crit b{flex:none;width:20px;text-align:center}
+.crit .y{color:var(--good)} .crit .n{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:.8rem}
+.scroll{overflow-x:auto}
+ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.test{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.test:first-of-type{border-top:none;padding-top:0}
+.rank{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.rank:first-child{border-top:none}
+.rank .num{font-family:var(--display);font-weight:700;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-size:.85rem;flex:none}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:5;padding-bottom:env(safe-area-inset-bottom)}
+nav .in{display:flex;width:100%;max-width:720px}
+nav button{flex:1;min-height:56px;border:none;background:none;color:var(--muted);font-weight:600;font-size:.82rem;border-top:3px solid transparent}
+nav button.on{color:var(--accent);border-top-color:var(--accent)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .hd{text-align:center;font-size:.75rem;color:var(--muted);font-weight:600;padding-bottom:2px}
+.cell{position:relative;min-height:52px;border:1px solid var(--line);border-radius:9px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 0 7px;font-weight:600;font-variant-numeric:tabular-nums}
+.cell small{font-size:.68rem;font-weight:600;min-height:12px;line-height:12px}
+.cell.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.cell.today{outline:2px solid var(--ink);outline-offset:1px}
+.cell:disabled{opacity:.35;cursor:default}
+.cell .pb{position:absolute;left:6px;right:6px;bottom:3px;height:4px;border-radius:2px}
+details summary{cursor:pointer;font-weight:600;min-height:32px}
+@media (prefers-reduced-motion: no-preference){.btn,.chip,.opt,.tog{transition:background .12s,border-color .12s}}
+</style>
+</head>
+<body>
+<header><div class="wrap head">
+  <div><h1>Elbow Rehab Log</h1><div class="sub" id="subline"></div></div>
+  <div class="row"><span class="pill" id="phasepill"></span></div>
+</div></header>
+<div class="wrap"><main id="app"></main></div>
+<nav aria-label="Sections"><div class="in" id="tabs"></div></nav>
+
+<script>
+window.addEventListener('error',function(ev){
+  try{var b=document.getElementById('errbox');if(!b){b=document.createElement('div');b.id='errbox';b.setAttribute('role','alert');b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;background:#b3302a;color:#fff;padding:8px 12px;font:13px/1.4 sans-serif';document.body.appendChild(b)}b.textContent='Error: '+(ev.message||'unknown')+' (line '+(ev.lineno||'?')+'). Send this to Claude.'}catch(x){}
+});
+/*LOGIC*/
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayStr=()=>fmt(new Date());
+const parseD=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=parseD(s);d.setDate(d.getDate()+n);return fmt(d)};
+const diffDays=(a,b)=>Math.round((parseD(b)-parseD(a))/864e5);
+const short=s=>{const d=parseD(s);return d.getDate()+' '+MON[d.getMonth()]};
+const long=s=>{const d=parseD(s);return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+' '+d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear()};
+const isNum=v=>typeof v==='number'&&isFinite(v);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const PHASES={
+ reduce:{name:'Reduce',tag:'Calm the elbow and stabilise',goal:'Bring pain down to about 3/10 and build a base to load from.',
+  intensity:'Low',volume:'High',freq:'Daily, 5 to 7 days a week',
+  variants:{iso:{label:'Isometric holds',dose:'3 to 5 sets of 30 to 45 s holds',note:'Hold the working position still and rest between sets. Isometrics help calm tendon pain and are a safe starting point.'},
+            pump:{label:'Light pump work',dose:'2 to 3 sets of about 30 reps, very light',note:'Very easy load, many reps, to bring blood flow to the area without overwhelming it.'}},
+  advance:'Pain 3/10 or less through the day, no flare-ups with normal activity, morning pain easing, rehab tolerated without a spike afterwards.'},
+ rebuild:{name:'Rebuild',tag:'Load the tendon more',goal:'Raise the load gradually and rebuild strength without flare-ups.',
+  intensity:'Minimal to moderate',volume:'Medium to high',freq:'Daily, or alternate days if recovery is poor',
+  variants:{full:{label:'Full range, slow tempo',dose:'2 to 5 sets of 15 to 20 reps, 3 s down and 3 s up',note:'Normal lifting and lowering through full range. Controlled tempo keeps stress on the injured fibres.'}},
+  advance:'Handling heavier sets with pain 3/10 or less during and for 48 h after, and everyday tasks (mug, door, jar) feel easy.'},
+ return:{name:'Return',tag:'Back to normal training',goal:'Resume full activity at your usual frequency while rehab continues.',
+  intensity:'Moderate',volume:'Moderate',freq:'Alternate days',
+  variants:{full:{label:'Full range, heavier',dose:'2 to 3 sets of 10 to 15 reps',note:'Prioritise the most painful tests. Fewer reps, heavier load.'}},
+  advance:'Back to your usual training volume with no extra pain the next morning.'},
+ reinforce:{name:'Reinforce',tag:'Keep it from coming back',goal:'Build capacity so the tendon stays resilient.',
+  intensity:'Moderate to high',volume:'Low to moderate',freq:'2 to 3 days a week',
+  variants:{full:{label:'Plyometrics or heavy slow resistance',dose:'Plyometrics 2 to 3 sets of 8 to 15, or heavy slow resistance with 3 s down and 3 s up',note:'Fast, lighter reps mimic sport loading. Heavy slow resistance builds capacity.'}},
+  advance:'Maintenance. Keep going 2 to 3 times a week.'}
+};
+const GYM_TYPES=['Legs','Push','Pull','Upper','Full body','Other'];
+const GYM_LETTER={'Legs':'L','Push':'Ps','Pull':'Pl','Upper':'U','Full body':'F','Other':'O'};
+const PHASE_ORDER=['reduce','rebuild','return','reinforce'];
+
+const TESTS=[
+ {k:'ecrl',name:'ECRL (extensor carpi radialis longus)',short:'ECRL',setup:'Arm straight, grip a racket handle or broomstick. Push the handle away from you (wrist toward the thumb side) while the other hand resists. Pain is usually just above the bony point of the elbow.',confirm:'Confirm: repeat with the elbow bent. Less pain suggests ECRL.',life:'Hammer curls, lifting a mug with the arm straight, topspin forehand.'},
+ {k:'ecrb',name:'ECRB (extensor carpi radialis brevis)',short:'ECRB',setup:'Hold the handle out with the wrist cocked back (the "motorcycle" position). With the other hand twist the handle away from you.',life:'The classic tennis elbow tendon, on the outside bony point of the elbow.'},
+ {k:'ecu',name:'ECU (extensor carpi ulnaris)',short:'ECU',setup:'Arm straight, grip firmly. Pull the handle toward you (wrist toward the little finger side) against the other hand.',life:'Ulnar side wrist movements.'},
+ {k:'sup',name:'Supinator',short:'Supinator',setup:'Elbow at 90 degrees. Turn the forearm outward (palm up, like holding a bowl of soup) against the other hand.',life:'Opening jars and bottle caps, handshakes, twisting.'},
+ {k:'ed',name:'Finger extensors (extensor digitorum)',short:'Finger extensors',setup:'Arm straight, fingers extended and hand open. Push down on each finger in turn (2 to 5), trying to break the position. Score the most painful finger.',life:'Gripping a racket, mug or handle.',finger:true},
+ {k:'nerve',name:'Radial nerve (radial tunnel)',short:'Radial nerve',setup:'Make a fist with the thumb tucked across it, arm at your side, and curl the wrist fully. Turn the shoulder in so the knuckles face out. Press the shoulder down with the other hand and lift the arm out to the side until level with the shoulder. Shooting pain down the arm in the radial nerve pattern is positive.',life:'Shooting pain down the forearm.',optional:true}
+];
+const TKEY=TESTS.map(t=>t.k);
+const TNAME=Object.fromEntries(TESTS.map(t=>[t.k,t.short]));
+
+const EX={
+ ecrl:{name:'Hammer curl with radial deviation',target:'ECRL',
+  how:['Hold a dumbbell by its far end so the weight hangs above your hand (this gives leverage).','Hammer-curl grip, thumb up. Curl toward the shoulder while tilting the wrist toward the thumb side.','Lower slowly. Use a light weight to start.'],
+  iso:'Hold the half-way curl position with the wrist tilted toward the thumb side.'},
+ ecrb:{name:'Wrist extension over a foam roller',target:'ECRB',
+  how:['Rest the arm straight on a foam roller, roller just above the elbow, palm down, hand hanging off the end.','Relax the wrist down, then lift all the way up.'],
+  iso:'Hold the wrist slightly extended in the middle position.'},
+ ecu:{name:'Ulnar deviation',target:'ECU',
+  how:['Hold the dumbbell at the top end so the weight hangs behind you, arm at your side.','Bend the wrist toward the little finger, control up, squeeze, control down. Fine, slow movement.'],
+  iso:'Hold the wrist half-way toward the little finger side.'},
+ sup:{name:'Supination with dumbbell',target:'Supinator',
+  how:['Arm straight on the foam roller. Hold the dumbbell at the bottom end so the weight is on top (leverage).','Rotate the forearm open (palm up) and closed, slowly. Hold it sideways or by the end, whichever is more comfortable.'],
+  iso:'Hold the forearm half-way rotated with the weight balanced.'},
+ ed:{name:'Finger extension with a band',target:'Finger extensors',
+  how:['Put the fingers through a loop band. Arm straight, resting on the foam roller.','Slowly open the hand against the band and close again.'],
+  iso:'Hold the fingers open against the band.'},
+ nerve:{name:'Radial nerve glide',target:'Radial nerve',
+  how:['Take the test position (fist, wrist curled, shoulder turned in, arm out to the side).','Tilt the head toward the same shoulder, then away to the other side, alternating. Glide, do not stretch.'],
+  iso:'Nerve glides are not held.'}
+};
+
+const ITEMS_PAIN=['Pain at rest','Pain with repeated arm movement','Pain carrying a plastic bag of groceries','Pain when it is at its least','Pain when it is at its worst'];
+const ITEMS_FUNC=['Turn a doorknob or key','Carry a grocery bag or briefcase by the handle','Lift a full coffee cup or glass to the mouth','Open a jar','Pull up trousers','Wring out a wet cloth','Personal care (dressing, washing)','Household work','Your usual work','Recreation or sport, including the gym'];
+
+function setPath(o,path,v){const p=path.split('.');let c=o;for(let i=0;i<p.length-1;i++){if(typeof c[p[i]]!=='object'||c[p[i]]===null)c[p[i]]={};c=c[p[i]]}c[p[p.length-1]]=v}
+function getPath(o,path){return path.split('.').reduce((c,k)=>c==null?undefined:c[k],o)}
+
+function rankExercises(a){
+  const sc=(a&&a.scores)||{};
+  const list=TKEY.map((k,i)=>({k,i,score:isNum(sc[k])?sc[k]:null}))
+    .filter(x=>x.score!==null&&x.score>0&&(x.k!=='nerve'||x.score>=3))
+    .sort((p,q)=>q.score-p.score||p.i-q.i);
+  return list.map((x,r)=>({k:x.k,score:x.score,priority:r<3}));
+}
+function dayPeak(d){if(!d)return null;const v=[d.painAM,d.painRehab,d.painWorst,d.painPM].filter(isNum);return v.length?Math.max(...v):null}
+function roll7(vals){return vals.map((_,i)=>{const w=vals.slice(Math.max(0,i-6),i+1).filter(isNum);return w.length>=3?w.reduce((a,b)=>a+b,0)/w.length:null})}
+function prteeScore(items){
+  const p=ITEMS_PAIN.map((_,i)=>items['p'+i]),f=ITEMS_FUNC.map((_,i)=>items['f'+i]);
+  if(![...p,...f].every(isNum))return null;
+  const pain=p.reduce((a,b)=>a+b,0),func=f.reduce((a,b)=>a+b,0)/2;
+  return {pain,func,total:Math.round((pain+func)*10)/10};
+}
+function sessionDone(day,prio){return !!day&&prio.length>0&&prio.every(k=>day.done&&day.done[k])}
+function adherence(day,prio){if(!day||!prio.length)return null;return Math.round(100*prio.filter(k=>day.done&&day.done[k]).length/prio.length)}
+function streak(days,prio,today){
+  let d=sessionDone(days[today],prio)?today:addDays(today,-1),n=0;
+  while(sessionDone(days[d],prio)){n++;d=addDays(d,-1)}
+  return n;
+}
+function targetStatus(days,date){
+  const vals=[];
+  [date,addDays(date,-1)].forEach(s=>{const d=days[s];if(d)[d.painRehab,d.painWorst].forEach(v=>{if(isNum(v))vals.push(v)})});
+  if(!vals.length)return {level:'none'};
+  const m=Math.max(...vals);
+  return {level:m<=3?'ok':m<=5?'mid':'hi',max:m};
+}
+function mean(a){a=a.filter(isNum);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null}
+function windowPeaks(days,end,n){const o=[];for(let i=0;i<n;i++)o.push(dayPeak(days[addDays(end,-i)]));return o}
+function advanceCriteria(days,prio,today){
+  const dates=Array.from({length:7},(_,i)=>addDays(today,-i));
+  const logged=dates.filter(s=>dayPeak(days[s])!==null).length;
+  const avg=mean(dates.map(s=>dayPeak(days[s])));
+  const flares=dates.filter(s=>days[s]&&days[s].flare).length;
+  const adh=mean(dates.map(s=>adherence(days[s],prio)));
+  return [
+    {ok:logged>=5,text:'Pain logged on at least 5 of the last 7 days ('+logged+')'},
+    {ok:avg!==null&&avg<=3,text:'Average daily peak pain 3/10 or less ('+(avg===null?'no data':avg.toFixed(1))+')'},
+    {ok:flares===0,text:'No flare-up in the last 7 days ('+flares+')'},
+    {ok:adh!==null&&adh>=70,text:'Rehab done on most days, 70% or more of priority exercises ('+(adh===null?'no data':Math.round(adh)+'%')+')'}
+  ];
+}
+function maxOf(a){a=a.filter(isNum);return a.length?Math.max(...a):null}
+function gymImpact(days,today){
+  const T=[],R=[];
+  Object.keys(days).forEach(s=>{
+    if(s>=today)return;
+    const d=days[s],n1=days[addDays(s,1)],n2=days[addDays(s,2)];
+    if(!d||dayPeak(n1)===null)return;
+    if(!d.gym&&!Object.keys(d).length)return;
+    const rec={am:isNum(n1.painAM)?n1.painAM:null,p48:maxOf([dayPeak(n1),dayPeak(n2)]),own:dayPeak(d),elb:d.gymElbow||null};
+    (d.gym?T:R).push(rec);
+  });
+  const m=(a,f)=>mean(a.map(x=>x[f]));
+  const byElb={};['Low','Medium','High'].forEach(e=>{const g=T.filter(x=>x.elb===e);if(g.length)byElb[e]={n:g.length,am:m(g,'am')}});
+  return {nT:T.length,nR:R.length,tAM:m(T,'am'),rAM:m(R,'am'),tP:m(T,'p48'),rP:m(R,'p48'),tOwn:m(T,'own'),rOwn:m(R,'own'),byElb};
+}
+function mondayStart(today,weeksBack){const dow=parseD(today).getDay();return addDays(today,-((dow+6)%7)-7*weeksBack)}
+/*ENDLOGIC*/
+
+/* ===== state and storage ===== */
+const LS_KEY='elbow-rehab-v1';
+const SEED_ASSESS={date:'2026-11-12',scores:{ecrl:8,ecrb:4,ecu:4,sup:8,ed:8,nerve:null},finger:'3rd (middle)',ecrlBent:null,note:'First screen from the video test'};
+let state={settings:{side:'Left',phase:'reduce',mode:'iso',start:todayStr(),remindOn:true,t1:'08:00',t2:'20:00'},days:{},assess:null,prtee:[]};
+let ui={tab:'today',date:todayStr(),range:30,open:{},draftA:null,draftP:null,resetArm:false,sync:'local',msg:''};
+let store={col:null};
+let touchAt=0;
+document.addEventListener('touchstart',()=>{touchAt=Date.now()},{passive:true});
+function renderIdle(){if(Date.now()-touchAt<2500){setTimeout(renderIdle,1200)}else render()}
+const dirty=new Set();let flushT=null;
+
+function latestAssess(){const l=state.assess&&state.assess.length?state.assess:[SEED_ASSESS];return l[l.length-1]}
+function dayOf(s){return state.days[s]||(state.days[s]={})}
+function prio(){return rankExercises(latestAssess()).filter(x=>x.priority).map(x=>x.k)}
+
+function persistLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(state))}catch(e){}}
+function docFor(id){
+  if(id==='settings')return state.settings;
+  if(id==='assess')return {list:state.assess||[]};
+  if(id==='prtee')return {list:state.prtee};
+  if(id.indexOf('day-')===0)return state.days[id.slice(4)];
+  return null;
+}
+function touch(id){if(id.indexOf('day-')===0&&state.days[id.slice(4)])state.days[id.slice(4)]._t=Date.now();dirty.add(id);persistLocal();if(store.col){clearTimeout(flushT);flushT=setTimeout(flush,700)}}
+async function flush(){
+  if(!store.col)return;
+  const ids=[...dirty];dirty.clear();
+  try{
+    for(const id of ids){const d=docFor(id);if(d)await store.col.doc(id).set(JSON.parse(JSON.stringify(d)))}
+    ui.sync='cloud';
+  }catch(e){ui.sync='error';ids.forEach(i=>dirty.add(i))}
+  paintHead();
+}
+function applyDoc(id,data){
+  if(!data)return;
+  if(id==='settings')Object.assign(state.settings,data);
+  else if(id==='assess')state.assess=data.list||[];
+  else if(id==='prtee')state.prtee=data.list||[];
+  else if(id.indexOf('day-')===0){const k=id.slice(4),loc=state.days[k];if(!loc||!(loc._t>(data._t||0)))state.days[k]=data}
+}
+async function initStore(){
+  try{const raw=localStorage.getItem(LS_KEY);if(raw){const s=JSON.parse(raw);Object.assign(state.settings,s.settings||{});state.days=s.days||{};state.assess=s.assess||null;state.prtee=s.prtee||[]}}catch(e){}
+  render();
+  if(!(window.claude&&window.claude.use))return;
+  try{
+    const timeout=new Promise(r=>setTimeout(()=>r(null),10000));
+    const [db,user]=await Promise.race([Promise.all([window.claude.use('db'),window.claude.use('user')]),timeout.then(()=>[null,null])]);
+    if(!db||!user)return;
+    const id=await user.id();
+    store.col=db.collection('data/users/'+id);
+    const snap=await store.col.get();
+    const docs=snap&&snap.docs?snap.docs:[];
+    let n=0;
+    docs.forEach(d=>{const data=typeof d.data==='function'?d.data():d.data;applyDoc(d.id,data);n++});
+    ui.sync='cloud';
+    if(n===0){dirty.add('settings');Object.keys(state.days).forEach(k=>dirty.add('day-'+k));if(state.assess)dirty.add('assess');if(state.prtee.length)dirty.add('prtee');if(dirty.size)flush()}
+    persistLocal();renderIdle();
+  }catch(e){ui.sync='local';paintHead()}
+}
+
+/* ===== small view helpers ===== */
+const painColor=v=>'hsl('+Math.round(135-13.5*v)+',58%,38%)';
+function scale(field,val,from,to,act){
+  let h='<div class="chips" role="group" style="grid-template-columns:repeat('+Math.min(6,to-from+1)+',1fr)">';
+  for(let i=from;i<=to;i++){h+='<button class="chip'+(val===i?' on':'')+'" data-a="'+act+'" data-f="'+field+'" data-v="'+i+'"'+(val===i?' style="background:'+painColor(from===0?i:(to-i)*10/(to-from))+'"':'')+' aria-pressed="'+(val===i)+'">'+i+'</button>'}
+  return h+'</div>';
+}
+function tog(label,path,on,cls){return '<button class="tog '+(cls||'')+(on?' on':'')+'" data-a="tog" data-f="'+path+'" aria-pressed="'+!!on+'"><span class="dot"></span>'+esc(label)+'</button>'}
+function paintHead(){
+  const ph=PHASES[state.settings.phase];
+  document.getElementById('phasepill').textContent='Phase: '+ph.name;
+  const s=state.settings;
+  const dayN=Math.max(1,diffDays(s.start,todayStr())+1);
+  const sy=ui.sync==='cloud'?'Saved to your account':ui.sync==='error'?'Not synced, saved on this device':'Saved on this device';
+  document.getElementById('subline').textContent=s.side+' elbow, day '+dayN+' of rehab. '+sy;
+}
+function paintTabs(){
+  const T=[['today','Today'],['trends','Trends'],['gym','Gym'],['plan','Plan'],['tests','Tests'],['data','Data']];
+  document.getElementById('tabs').innerHTML=T.map(t=>'<button data-a="tab" data-v="'+t[0]+'" class="'+(ui.tab===t[0]?'on':'')+'" aria-current="'+(ui.tab===t[0]?'page':'false')+'">'+t[1]+'</button>').join('');
+}
+
+/* ===== TODAY ===== */
+function exRow(k,rank,day,ph){
+  const e=EX[k],done=!!(day.done&&day.done[k]);
+  const variant=ph.variants[state.settings.mode]||ph.variants[Object.keys(ph.variants)[0]];
+  const isIso=state.settings.phase==='reduce'&&state.settings.mode==='iso';
+  const open=!!ui.open[k];
+  let h='<div class="ex"><label class="chk"><input type="checkbox" data-c="done" data-k="'+k+'"'+(done?' checked':'')+' aria-label="Done: '+esc(e.name)+'"><span class="box"></span></label>';
+  h+='<div class="grow"><div class="exname">'+esc(e.name)+(rank?'<span class="tag">Priority '+rank+'</span>':'<span class="tag alt">Optional</span>')+'</div><div class="dose">'+esc(e.target)+' · '+esc(variant.dose)+'</div></div>';
+  h+='<button class="ghost" data-a="ex" data-k="'+k+'" aria-expanded="'+open+'">'+(open?'Hide':'How')+'</button></div>';
+  if(open){
+    h+='<div class="exbody"><ol>'+e.how.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol>';
+    if(isIso)h+='<p><b>Isometric version:</b> '+esc(e.iso)+'</p>';
+    h+='<p class="muted">'+esc(variant.note)+'</p><div class="field"><label for="load-'+k+'">Load used (optional)</label><input id="load-'+k+'" type="text" data-c="load" data-k="'+k+'" value="'+esc((day.load&&day.load[k])||'')+'" placeholder="e.g. 2 kg, or green band"></div></div>';
+  }
+  return h;
+}
+function renderToday(){
+  const date=ui.date,day=state.days[date]||{},today=todayStr(),isToday=date===today;
+  const ph=PHASES[state.settings.phase];
+  const rk=rankExercises(latestAssess());
+  const pr=rk.filter(x=>x.priority).map(x=>x.k);
+  const others=TKEY.filter(k=>!pr.includes(k)&&k!=='nerve'||(k==='nerve'&&rk.some(x=>x.k==='nerve'&&!x.priority)));
+  const st=targetStatus(state.days,date);
+  let h='';
+  h+='<div class="datebar"><button class="btn" data-a="dshift" data-v="-1" aria-label="Previous day">&lsaquo;</button><div class="date">'+long(date)+(isToday?' (today)':'')+'</div><button class="btn" data-a="dshift" data-v="1" aria-label="Next day"'+(date>=today?' disabled':'')+'>&rsaquo;</button></div>';
+  if(!isToday)h+='<div class="row"><button class="btn sm" data-a="dtoday">Back to today</button></div>';
+  // reminder banner
+  if(isToday&&state.settings.remindOn){
+    const now=new Date(),hm=pad(now.getHours())+':'+pad(now.getMinutes());
+    if(hm>=state.settings.t1&&!sessionDone(day,pr))h+='<div class="banner">Rehab not done yet today. It takes 15 to 25 minutes.</div>';
+    else if(hm>=state.settings.t2&&!isNum(day.painPM))h+='<div class="banner">Log your evening pain before bed.</div>';
+  }
+  // status
+  const msgs={none:['No pain logged for today or yesterday','Log the pain during rehab and the worst pain of the day. The target is 3/10 or less during, and for 48 hours after.'],
+    ok:['Within target','Peak pain '+st.max+'/10 over today and yesterday. You can stay at this load, or progress if this has held for a week.'],
+    mid:['Slightly above target','Peak pain '+st.max+'/10 over today and yesterday. Hold the load, do not progress, keep reps controlled.'],
+    hi:['Above target','Peak pain '+st.max+'/10 over today and yesterday. Flare protocol: halve the load and the session time until pain is 3/10 or less for 48 hours. Keep moving, light rehab beats a day off.']};
+  h+='<div class="status '+st.level+'"><b>'+msgs[st.level][0]+'</b><span class="small">'+msgs[st.level][1]+'</span></div>';
+  // exercises
+  h+='<section class="card"><div class="row between"><h2>Exercises</h2><span class="small muted">'+(adherence(day,pr)===null?'':adherence(day,pr)+'% of priority done')+'</span></div>';
+  h+='<div class="small muted"><b>'+ph.name+'.</b> '+esc(ph.freq)+'. Slow tempo, 3 s down and 3 s up. Effort about 7/10 as pain allows, but never past 3/10 pain.</div>';
+  if(state.settings.phase==='reduce'){
+    h+='<div class="seg" role="group" aria-label="Reduce phase style"><button data-a="mode" data-v="iso" class="'+(state.settings.mode==='iso'?'on':'')+'">Isometric holds</button><button data-a="mode" data-v="pump" class="'+(state.settings.mode==='pump'?'on':'')+'">Light pump work</button></div>';
+  }
+  h+='<div>';
+  pr.forEach((k,i)=>{h+=exRow(k,i+1,day,ph)});
+  h+='</div>';
+  if(others.length){h+='<details><summary>Other exercises ('+others.length+')</summary><div>'+others.map(k=>exRow(k,0,day,ph)).join('')+'</div></details>'}
+  h+='</section>';
+  // pain check-in
+  h+='<section class="card"><h2>Pain check-in</h2>';
+  [['painAM','Morning pain on waking'],['painRehab','Pain during rehab'],['painWorst','Worst pain today'],['painPM','Evening pain']].forEach(f=>{
+    h+='<div class="field"><div class="lab">'+f[1]+' <span class="muted small">0 to 10</span></div>'+scale(f[0],day[f[0]],0,10,'chip')+'</div>';
+  });
+  h+='<div class="field"><div class="lab">What did the morning pain feel like?</div><div class="row">';
+  ['Burning','Sharp','Dull ache','Sore','None'].forEach(c=>{h+='<button class="opt'+(day.char===c?' on':'')+'" data-a="char" data-v="'+c+'" aria-pressed="'+(day.char===c)+'">'+c+'</button>'});
+  h+='</div><div class="tiny muted">Easing from burning toward sharp, aching, sore and then none is progress even if the number is unchanged.</div></div></section>';
+  // function
+  h+='<section class="card"><h2>Daily tasks</h2><div class="small muted">Pain with each task, 0 to 10.</div>';
+  [['fn.cap','Twisting a bottle cap'],['fn.mug','Gripping a mug'],['fn.door','Using a door handle']].forEach(f=>{
+    h+='<div class="field"><div class="lab">'+f[1]+'</div>'+scale(f[0],getPath(day,f[0]),0,10,'chip')+'</div>';
+  });
+  h+='</section>';
+  // sleep
+  h+='<section class="card"><h2>Sleep</h2><div class="grid2"><div class="field"><label for="sleepH">Hours slept</label><input id="sleepH" type="number" inputmode="decimal" step="0.5" min="0" max="14" data-c="sleepH" value="'+(isNum(day.sleepH)?day.sleepH:'')+'" placeholder="e.g. 7"></div>';
+  h+='<div class="field"><div class="lab">Quality, 1 poor to 5 great</div>'+scale('sleepQ',day.sleepQ,1,5,'chip')+'</div></div>';
+  h+=tog('Woke up because of elbow pain','wokePain',day.wokePain)+'</section>';
+  // gym
+  h+='<section class="card"><h2>Gym</h2>'+tog('Trained today','gym',day.gym);
+  if(day.gym){
+    h+='<div class="field"><div class="lab">What did you train?</div><div class="row">'+GYM_TYPES.map(t=>'<button class="opt'+(day.gymType===t?' on':'')+'" data-a="gtype" data-v="'+t+'" aria-pressed="'+(day.gymType===t)+'">'+t+'</button>').join('')+'</div></div>';
+    h+='<div class="field"><div class="lab">How much did it load the elbow?</div><div class="seg" role="group">'+['Low','Medium','High'].map(t=>'<button data-a="gelb" data-v="'+t+'" class="'+(day.gymElbow===t?'on':'')+'">'+t+'</button>').join('')+'</div></div>';
+  }
+  h+='</section>';
+  // habits
+  h+='<section class="card"><h2>Today</h2><div class="toggles">';
+  h+=tog('Flare-up day','flare',day.flare,'flare');
+  h+=tog('Used a strap','adj.strap',getPath(day,'adj.strap'));
+  h+=tog('Heat','adj.heat',getPath(day,'adj.heat'));
+  h+=tog('Massage or pin and stretch','adj.massage',getPath(day,'adj.massage'));
+  h+=tog('Elbow on pillow at 90 degrees','adj.pillow',getPath(day,'adj.pillow'));
+  h+=tog('Collagen 20 g with vitamin C','adj.collagen',getPath(day,'adj.collagen'));
+  h+='</div><div class="field"><label for="note">Notes (what you did, what set it off)</label><textarea id="note" data-c="note">'+esc(day.note||'')+'</textarea></div></section>';
+  return h;
+}
+
+/* ===== TRENDS ===== */
+function svgChart(o){
+  const W=640,H=o.h||200,pl=30,pr=12,pt=14,pb=26,n=o.dates.length,iw=W-pl-pr,ih=H-pt-pb;
+  const X=i=>pl+(n<=1?iw/2:i*iw/(n-1)),Y=v=>pt+(1-(v-o.ymin)/(o.ymax-o.ymin))*ih;
+  let s='<svg viewBox="0 0 '+W+' '+H+'" class="chart" role="img" aria-label="'+esc(o.label)+'">';
+  o.ticks.forEach(t=>{s+='<line class="grid" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(t)+'" y2="'+Y(t)+'"/><text class="ax" x="'+(pl-6)+'" y="'+(Y(t)+4)+'" text-anchor="end">'+t+'</text>'});
+  (o.marks||[]).forEach(i=>{s+='<line x1="'+X(i)+'" x2="'+X(i)+'" y1="'+pt+'" y2="'+(H-pb)+'" style="stroke:var(--bad);opacity:.35" stroke-width="'+Math.max(2,Math.min(10,iw/n*.8))+'"/>'});
+  (o.refs||[]).forEach(r=>{s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+Y(r.v)+'" y2="'+Y(r.v)+'" stroke-dasharray="5 4" stroke-width="1.5" style="stroke:'+r.color+'"/><text class="axl" x="'+(W-pr)+'" y="'+(Y(r.v)-4)+'" text-anchor="end" style="fill:'+r.color+'">'+esc(r.label)+'</text>'});
+  const k=Math.min(5,n);
+  for(let j=0;j<k;j++){const i=Math.round(j*(n-1)/Math.max(1,k-1));s+='<text class="ax" x="'+X(i)+'" y="'+(H-6)+'" text-anchor="'+(j===0?'start':j===k-1?'end':'middle')+'">'+short(o.dates[i])+'</text>'}
+  o.series.forEach(se=>{
+    if(se.bar){const bw=Math.max(2,Math.min(18,iw/n*.7));se.vals.forEach((v,i)=>{if(isNum(v))s+='<rect x="'+(X(i)-bw/2)+'" y="'+Y(v)+'" width="'+bw+'" height="'+Math.max(1,Y(o.ymin)-Y(v))+'" rx="2" style="fill:'+se.color+'"/>'});return}
+    let d='',last=-1;
+    se.vals.forEach((v,i)=>{if(isNum(v)){d+=(d?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1);last=i}});
+    if(d)s+='<path d="'+d+'" fill="none" stroke-width="'+(se.w||2)+'" stroke-linejoin="round" stroke-linecap="round"'+(se.dash?' stroke-dasharray="'+se.dash+'"':'')+' style="stroke:'+se.color+'"/>';
+    if(!se.nodots&&n<=45)se.vals.forEach((v,i)=>{if(isNum(v)&&i!==last)s+='<circle cx="'+X(i)+'" cy="'+Y(v)+'" r="2.5" style="fill:'+se.color+'"/>'});
+    if(last>=0&&!se.nodots){s+='<circle cx="'+X(last)+'" cy="'+Y(se.vals[last])+'" r="5" style="fill:'+se.color+'"/>'}
+  });
+  return s+'</svg>';
+}
+function legend(items){return '<div class="legend">'+items.map(i=>'<span><i style="background:'+i[1]+'"></i>'+esc(i[0])+'</span>').join('')+'</div>'}
+function hasAny(a){return a.some(isNum)}
+function renderTrends(){
+  const today=todayStr(),days=state.days,P=prio();
+  const keys=Object.keys(days).filter(k=>Object.keys(days[k]).length).sort();
+  let start;
+  if(ui.range==='all')start=keys.length?keys[0]:addDays(today,-13);else start=addDays(today,-(ui.range-1));
+  if(diffDays(start,today)<13)start=addDays(today,-13);
+  const dates=[];for(let d=start;d<=today;d=addDays(d,1))dates.push(d);
+  const get=f=>dates.map(s=>{const v=getPath(days[s]||{},f);return isNum(v)?v:null});
+  const peaks=dates.map(s=>dayPeak(days[s]));
+  const avg=roll7(peaks);
+  const marks=dates.map((s,i)=>days[s]&&days[s].flare?i:-1).filter(i=>i>=0);
+  const base=Math.max(...TKEY.map(k=>latestAssess().scores[k]).filter(isNum),0);
+  const first=(state.assess&&state.assess[0])||SEED_ASSESS;
+  const baseline=Math.max(...TKEY.map(k=>first.scores[k]).filter(isNum),0);
+  // stats
+  const now7=mean(windowPeaks(days,today,7)),prev7=mean(windowPeaks(days,addDays(today,-7),7));
+  const wk=Array.from({length:7},(_,i)=>sessionDone(days[addDays(today,-i)],P)).filter(Boolean).length;
+  const sl7=mean(Array.from({length:7},(_,i)=>(days[addDays(today,-i)]||{}).sleepH));
+  const flareDays=keys.filter(k=>days[k].flare);
+  const lastFlare=flareDays.length?diffDays(flareDays[flareDays.length-1],today):null;
+  let h='';
+  h+='<div class="tiles">';
+  h+='<div class="tile"><span class="n">'+streak(days,P,today)+'</span><span class="l">day streak, all priority exercises</span></div>';
+  h+='<div class="tile"><span class="n">'+wk+'/7</span><span class="l">full sessions this week</span></div>';
+  h+='<div class="tile"><span class="n">'+(now7===null?'-':now7.toFixed(1))+'</span><span class="l">avg daily peak pain, last 7 days'+(now7!==null&&prev7!==null?' ('+(now7-prev7<=0?'':'+')+(now7-prev7).toFixed(1)+' vs previous 7)':'')+'</span></div>';
+  h+='<div class="tile"><span class="n">'+(now7!==null&&baseline>0?Math.round(100*(baseline-now7)/baseline)+'%':'-')+'</span><span class="l">change from baseline '+baseline+'/10 (positive is better)</span></div>';
+  h+='<div class="tile"><span class="n">'+(sl7===null?'-':sl7.toFixed(1)+' h')+'</span><span class="l">avg sleep, last 7 days</span></div>';
+  h+='<div class="tile"><span class="n">'+(lastFlare===null?'-':lastFlare+' d')+'</span><span class="l">since last flare-up</span></div>';
+  h+='</div>';
+  h+='<div class="seg" role="group" aria-label="Chart range">'+[[14,'14 days'],[30,'30 days'],[90,'90 days'],['all','All']].map(r=>'<button data-a="range" data-v="'+r[0]+'" class="'+(String(ui.range)===String(r[0])?'on':'')+'">'+r[1]+'</button>').join('')+'</div>';
+  // pain
+  const pm=get('painAM'),pr2=get('painRehab'),pw=get('painWorst');
+  h+='<section class="card"><h2>Pain</h2><div class="small muted">Day to day will zig-zag. Judge progress by the dashed 7-day average, not by single days. Red bands are flare-ups.</div>';
+  if(hasAny(pm)||hasAny(pr2)||hasAny(pw)){
+    h+=svgChart({label:'Pain over time',dates,ymin:0,ymax:10,ticks:[0,3,5,7,10],marks,refs:[{v:3,color:'var(--good)',label:'target 3'}].concat(baseline>0?[{v:baseline,color:'var(--muted)',label:'baseline '+baseline}]:[]),
+      series:[{vals:pm,color:'var(--c1)'},{vals:pr2,color:'var(--c2)'},{vals:pw,color:'var(--c3)'},{vals:avg,color:'var(--c4)',dash:'6 4',w:2.5,nodots:true}]});
+    h+=legend([['Morning','var(--c1)'],['During rehab','var(--c2)'],['Worst of day','var(--c3)'],['7-day avg of daily peak','var(--c4)']]);
+  }else h+='<div class="empty">Log pain on the Today tab and the chart appears here.</div>';
+  h+='</section>';
+  // function
+  const fc=get('fn.cap'),fm=get('fn.mug'),fd=get('fn.door');
+  h+='<section class="card"><h2>Daily tasks</h2><div class="small muted">Pain with the tasks that bother you. Falling scores here matter more than the headline number.</div>';
+  if(hasAny(fc)||hasAny(fm)||hasAny(fd)){
+    h+=svgChart({label:'Pain with daily tasks',dates,ymin:0,ymax:10,ticks:[0,5,10],series:[{vals:fc,color:'var(--c1)'},{vals:fm,color:'var(--c2)'},{vals:fd,color:'var(--c3)'}]});
+    h+=legend([['Bottle cap','var(--c1)'],['Mug grip','var(--c2)'],['Door handle','var(--c3)']]);
+  }else h+='<div class="empty">No task scores yet.</div>';
+  h+='</section>';
+  // sleep
+  const sh=get('sleepH'),sq=get('sleepQ');
+  h+='<section class="card"><h2>Sleep</h2>';
+  if(hasAny(sh)){
+    h+=svgChart({label:'Hours slept',dates,ymin:0,ymax:10,ticks:[0,4,7,10],refs:[{v:7,color:'var(--muted)',label:'7 h'}],series:[{vals:sh,color:'var(--c1)',bar:true}]});
+    const woke=dates.filter(s=>days[s]&&days[s].wokePain).length;
+    h+='<div class="small muted">Woke with elbow pain on '+woke+' of '+dates.length+' days shown'+(hasAny(sq)?'. Average quality '+mean(sq).toFixed(1)+'/5':'')+'.</div>';
+  }else h+='<div class="empty">No sleep logged yet.</div>';
+  h+='</section>';
+  // adherence
+  const ad=dates.map(s=>adherence(days[s],P));
+  h+='<section class="card"><h2>Rehab done</h2><div class="small muted">Percent of priority exercises ticked each day. Consistency is the main driver of recovery.</div>';
+  if(hasAny(ad))h+=svgChart({label:'Rehab completion',dates,ymin:0,ymax:100,ticks:[0,50,100],series:[{vals:ad,color:'var(--c2)',bar:true}]});
+  else h+='<div class="empty">Tick exercises on the Today tab.</div>';
+  h+='</section>';
+  // prtee
+  h+='<section class="card"><h2>Weekly PRTEE score</h2>';
+  if(state.prtee.length){
+    const pd=state.prtee.map(p=>p.date),pv=state.prtee.map(p=>p.total);
+    if(pd.length===1)pd.unshift(addDays(pd[0],-7)),pv.unshift(null);
+    h+=svgChart({label:'PRTEE total',dates:pd,ymin:0,ymax:100,ticks:[0,25,50,75,100],series:[{vals:pv,color:'var(--c3)'}]});
+    h+='<div class="small muted">Lower is better. A drop of about 11 points is commonly cited as a meaningful change.</div>';
+  }else h+='<div class="empty">Do the PRTEE once a week on the Tests tab.</div>';
+  h+='</section>';
+  return h;
+}
+
+/* ===== PLAN ===== */
+function renderPlan(){
+  const cur=state.settings.phase,crit=advanceCriteria(state.days,prio(),todayStr());
+  let h='<section class="card"><h2>Phase</h2><div class="small muted">Move forward when you meet the criteria, and drop back a phase after a flare. The phases are a road map, not strict rules.</div>';
+  PHASE_ORDER.forEach((k,i)=>{
+    const p=PHASES[k];
+    const dose=Object.values(p.variants).map(v=>v.dose).join(' or ');
+    h+='<button class="phasecard'+(cur===k?' on':'')+'" data-a="phase" data-v="'+k+'" aria-pressed="'+(cur===k)+'"><div class="row between"><h3>'+(i+1)+'. '+p.name+'</h3>'+(cur===k?'<span class="pill">Current</span>':'')+'</div><div class="small">'+esc(p.goal)+'</div><dl><dt>Dose</dt><dd>'+esc(dose)+'</dd><dt>How often</dt><dd>'+esc(p.freq)+'</dd><dt>Intensity</dt><dd>'+esc(p.intensity)+'</dd><dt>Volume</dt><dd>'+esc(p.volume)+'</dd><dt>Move on when</dt><dd>'+esc(p.advance)+'</dd></dl></button>';
+  });
+  h+='</section>';
+  h+='<section class="card"><h2>Ready to progress?</h2><div class="small muted">Checked against your last 7 days of logs.</div>'+crit.map(c=>'<div class="crit"><b class="'+(c.ok?'y':'n')+'">'+(c.ok?'&#10003;':'&#10007;')+'</b><span>'+esc(c.text)+'</span></div>').join('');
+  const all=crit.every(c=>c.ok),idx=PHASE_ORDER.indexOf(cur);
+  h+='<div class="status '+(all?'ok':'none')+'"><b>'+(all?'Criteria met':'Not yet')+'</b><span class="small">'+(all?(idx<3?'You can move to '+PHASES[PHASE_ORDER[idx+1]].name+'. Change the load gradually.':'Stay in Reinforce and keep it up.'):'Stay in this phase and keep logging.')+'</span></div></section>';
+  h+='<section class="card"><h2>Rules of thumb</h2><ul class="plain">';
+  h+='<li><b>Pain target:</b> 3/10 or less during rehab, and 3/10 or less for 48 hours afterwards. Tendon pain can arrive a day or two late.</li>';
+  h+='<li><b>Effort:</b> around 7/10, meaning you could do 2 more reps but not 4. If pain is high, lower the load, not the frequency.</li>';
+  h+='<li><b>Tempo:</b> 3 seconds down, 3 seconds up, with a weight you control. Fast, heavy reps shift stress onto healthy fibres.</li>';
+  h+='<li><b>Early on:</b> low intensity, high volume, high frequency. Later: higher intensity, lower volume, fewer sessions.</li>';
+  h+='<li><b>Session length:</b> 15 to 25 minutes a day, 3 to 10 exercises, built around your top three painful tests.</li>';
+  h+='</ul></section>';
+  h+='<section class="card"><h2>Flare-up protocol</h2><ul class="plain"><li>Cut load and session time to about half until pain is 3/10 or less for 48 hours.</li><li>Higher volume, lower intensity. Light rehab is usually better than a day off.</li><li>Heat and massage are fine. Keep the elbow moving.</li><li>A flare is not failure. Around 80% of people have at least one, and shorter flares over time are a good sign.</li></ul></section>';
+  h+='<section class="card"><h2>Gym and sport</h2><ul class="plain"><li>You do not need to be pain-free to train. Resting calms pain but does not fix the tendon.</li><li>Build in this order: session length first, then how often, then intensity.</li><li>Start with one short, easy session a week at about 3/10 effort. Keep sessions to an hour or less and avoid back-to-back days at first.</li><li>The 48-hour rule applies. If you feel fine at the time but wake up at 5/10, you did too much.</li><li>Applied to your case: your pain started after a gym session, so lighter loads on pulling and gripping work, and anything that loads the painful tests (hammer curls, heavy supinated or gripped work) should wait.</li></ul></section>';
+  h+='<section class="card"><h2>Other things in the video</h2><ul class="plain"><li><b>Sleep:</b> pillow under the elbow with it bent to 90 degrees. Morning pain is often worse with poor sleep.</li><li><b>Supplements (as claimed in the video):</b> collagen about 20 g a day with vitamin C, enough protein, omega-3. The video calls collagen the most useful. Evidence for these is modest.</li><li><b>Pain relief in the moment:</b> massage, pin and stretch with a lacrosse ball, scraping, heat.</li><li><b>Timeline:</b> mild 6 to 10 weeks, moderate 10 to 16 weeks, chronic 3 to 6 months or more. Tendons take about twice as long as muscle to heal.</li><li><b>Small wins:</b> more confidence with a mug or door, less morning pain, pain character changing from sharp to aching, shorter flares.</li><li><b>Travel:</b> a 5 to 10 minute version with a band keeps momentum.</li></ul></section>';
+  h+='<p class="tiny muted">Built from the part of the video transcript between 1:12:54 and 2:38:43. The earlier chapters were not provided. This is general rehab guidance, not a diagnosis. Review with a clinician if pain is worsening, wakes you at night, or comes with numbness, weakness or shooting pain.</p>';
+  return h;
+}
+
+/* ===== TESTS ===== */
+function renderTests(){
+  const a=ui.draftA||(ui.draftA=JSON.parse(JSON.stringify(latestAssess())));
+  a.date=todayStr();
+  const rk=rankExercises(a);
+  let h='<section class="card"><h2>Movement screen</h2><div class="small muted">Resist each movement with the other hand and score the pain 0 to 10. Go light, or skip a test, if the elbow is very sore. Rank the results to pick your priority exercises. Repeat every 2 weeks.</div>';
+  TESTS.forEach(t=>{
+    h+='<div class="test"><div><h3>'+esc(t.name)+(t.optional?' <span class="tag alt">Optional</span>':'')+'</h3><div class="small muted">'+esc(t.setup)+'</div>'+(t.confirm?'<div class="small muted">'+esc(t.confirm)+'</div>':'')+'<div class="tiny muted">In daily life: '+esc(t.life)+'</div></div>'+scale('s.'+t.k,a.scores[t.k],0,10,'achip');
+    if(t.optional)h+='<div><button class="opt'+(a.scores[t.k]==null?' on':'')+'" data-a="anull" data-f="s.'+t.k+'">Not tested</button></div>';
+    if(t.finger)h+='<div class="field"><label for="finger">Most painful finger</label><input id="finger" type="text" data-c="finger" value="'+esc(a.finger||'')+'" placeholder="e.g. 3rd (middle)"></div>';
+    h+='</div>';
+  });
+  h+='<div class="field"><label for="anote">Notes</label><input id="anote" type="text" data-c="anote" value="'+esc(a.note||'')+'"></div>';
+  h+='<button class="btn primary" data-a="asave">Save this screen as today ('+short(todayStr())+')</button></section>';
+  h+='<section class="card"><h2>Your priorities</h2><div class="small muted">The three highest scores drive the daily checklist.</div>';
+  if(rk.length)h+=rk.map((x,i)=>'<div class="rank"><span class="num">'+(i+1)+'</span><div class="grow"><b>'+esc(TNAME[x.k])+'</b> <span class="muted">'+esc(EX[x.k].name)+'</span></div><b>'+x.score+'/10</b>'+(x.priority?'<span class="tag">Priority</span>':'')+'</div>').join('');
+  else h+='<div class="empty">Score at least one test above 0.</div>';
+  h+='</section>';
+  const hist=state.assess&&state.assess.length?state.assess:[SEED_ASSESS];
+  h+='<section class="card"><h2>Screen history</h2><div class="scroll"><table><thead><tr><th>Date</th>'+TKEY.map(k=>'<th>'+esc(TNAME[k])+'</th>').join('')+'</tr></thead><tbody>'+hist.slice().reverse().map(r=>'<tr><td>'+short(r.date)+'</td>'+TKEY.map(k=>'<td>'+(isNum(r.scores[k])?r.scores[k]:'-')+'</td>').join('')+'</tr>').join('')+'</tbody></table></div></section>';
+  // PRTEE
+  const p=ui.draftP||(ui.draftP={items:{},pfg:''});
+  const sc=prteeScore(p.items);
+  h+='<section class="card"><h2>Weekly PRTEE</h2><div class="small muted">The Patient-Rated Tennis Elbow Evaluation is a validated 15-item questionnaire for tennis elbow. Score each item over the last week. 0 is no pain or no difficulty, 10 is the worst pain or unable to do it. Total is 0 to 100, lower is better.</div>';
+  h+='<h3>Pain</h3>'+ITEMS_PAIN.map((t,i)=>'<div class="field"><div class="lab">'+esc(t)+'</div>'+scale('p'+i,p.items['p'+i],0,10,'pchip')+'</div>').join('');
+  h+='<h3>Difficulty</h3>'+ITEMS_FUNC.map((t,i)=>'<div class="field"><div class="lab">'+esc(t)+'</div>'+scale('f'+i,p.items['f'+i],0,10,'pchip')+'</div>').join('');
+  h+='<div class="field"><label for="pfg">Pain-free grip strength in kg (optional, from a dynamometer)</label><input id="pfg" type="number" inputmode="decimal" step="0.5" min="0" data-c="pfg" value="'+esc(p.pfg)+'"></div>';
+  h+='<div class="status '+(sc?'none':'none')+'"><b>'+(sc?'Total '+sc.total+' / 100':'Answer all 15 items')+'</b>'+(sc?'<span class="small">Pain '+sc.pain+' / 50, function '+sc.func+' / 50</span>':'')+'</div>';
+  h+='<button class="btn primary" data-a="psave"'+(sc?'':' disabled')+'>Save weekly score</button>';
+  if(state.prtee.length)h+='<div class="scroll"><table><thead><tr><th>Date</th><th>Pain</th><th>Function</th><th>Total</th><th>Grip kg</th></tr></thead><tbody>'+state.prtee.slice().reverse().map(r=>'<tr><td>'+short(r.date)+'</td><td>'+r.pain+'</td><td>'+r.func+'</td><td><b>'+r.total+'</b></td><td>'+(isNum(r.pfg)?r.pfg:'-')+'</td></tr>').join('')+'</tbody></table></div>';
+  h+='</section>';
+  h+='<section class="card"><h2>Which pain scale?</h2><ul class="plain"><li><b>0 to 10 rating (NRS):</b> simple, valid and reliable, and what this app uses daily. A change of about 2 points or 30% is usually felt as real. It is noisy day to day, so use the 7-day average.</li><li><b>PRTEE:</b> the better weekly measure because it captures function as well as pain. About 11 points is often cited as a meaningful change.</li><li><b>Pain-free grip strength:</b> objective and responsive if you have a dynamometer, a useful addition for tracking.</li><li><b>Pain character and task scores:</b> sharp turning to aching, and falling bottle cap and mug scores, show progress even when the number sits still.</li></ul></section>';
+  return h;
+}
+
+/* ===== GYM ===== */
+function renderGym(){
+  const today=todayStr(),days=state.days,start=mondayStart(today,4);
+  let h='<section class="card"><h2>Training days</h2><div class="small muted">Tap a day to tick or untick that you trained. The bar under each day shows that day\'s peak pain, so you can see training and pain together.</div><div class="cal">';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(x=>{h+='<div class="hd">'+x+'</div>'});
+  for(let i=0;i<35;i++){
+    const d=addDays(start,i),day=days[d]||{},pk=dayPeak(day),fut=d>today;
+    h+='<button class="cell'+(day.gym?' on':'')+(d===today?' today':'')+'" data-a="gymday" data-v="'+d+'"'+(fut?' disabled':'')+' aria-pressed="'+!!day.gym+'" aria-label="'+long(d)+(day.gym?', trained':'')+'">'+parseD(d).getDate()+'<small>'+(day.gym&&day.gymType?GYM_LETTER[day.gymType]:'')+'</small>'+(pk!==null?'<span class="pb" style="background:'+painColor(pk)+'"></span>':'')+'</button>';
+  }
+  h+='</div><div class="legend"><span>L legs</span><span>Ps push</span><span>Pl pull</span><span>U upper</span><span>F full body</span><span>O other</span></div></section>';
+  const last28=Array.from({length:28},(_,i)=>days[addDays(today,-i)]).filter(x=>x&&x.gym).length;
+  const wk=Array.from({length:7},(_,i)=>days[addDays(today,-i)]).filter(x=>x&&x.gym).length;
+  h+='<div class="tiles"><div class="tile"><span class="n">'+wk+'</span><span class="l">training days, last 7</span></div><div class="tile"><span class="n">'+last28+'</span><span class="l">training days, last 28</span></div></div>';
+  const im=gymImpact(days,today),f=v=>v===null?'-':v.toFixed(1);
+  h+='<section class="card"><h2>Impact on the elbow</h2><div class="small muted">Compares pain after training days with pain after rest days. Tendon pain often arrives a day or two late, so this looks at the next morning and the following 48 hours.</div>';
+  h+='<div class="scroll"><table><thead><tr><th></th><th>Training</th><th>Rest</th></tr></thead><tbody>';
+  h+='<tr><td>Days compared</td><td>'+im.nT+'</td><td>'+im.nR+'</td></tr>';
+  h+='<tr><td>Next-morning pain</td><td>'+f(im.tAM)+'</td><td>'+f(im.rAM)+'</td></tr>';
+  h+='<tr><td>Peak pain, next 48 h</td><td>'+f(im.tP)+'</td><td>'+f(im.rP)+'</td></tr>';
+  h+='<tr><td>Peak pain on the day</td><td>'+f(im.tOwn)+'</td><td>'+f(im.rOwn)+'</td></tr></tbody></table></div>';
+  if(im.nT>=3&&im.nR>=3&&im.tP!==null&&im.rP!==null){
+    const diff=im.tP-im.rP;
+    h+='<div class="status '+(diff>=1?'hi':diff<=-1?'ok':'none')+'"><b>'+(diff>=1?'Training days are followed by more pain':diff<=-1?'Training days are followed by less pain':'No clear difference yet')+'</b><span class="small">Peak pain over the next 48 hours averages '+f(im.tP)+' after training and '+f(im.rP)+' after rest days ('+(diff>0?'+':'')+diff.toFixed(1)+').'+(diff>=1?' Try lighter loads or fewer elbow-heavy lifts, and check which sessions drive it below.':'')+'</span></div>';
+  }else h+='<div class="empty">Needs at least 3 training days and 3 rest days with pain logged on the following day. Keep logging.</div>';
+  const be=Object.keys(im.byElb);
+  if(be.length){h+='<h3>By elbow load</h3><div class="scroll"><table><thead><tr><th>Elbow load</th><th>Sessions</th><th>Next-morning pain</th></tr></thead><tbody>'+['Low','Medium','High'].filter(k=>im.byElb[k]).map(k=>'<tr><td>'+k+'</td><td>'+im.byElb[k].n+'</td><td>'+f(im.byElb[k].am)+'</td></tr>').join('')+'</tbody></table></div>'}
+  h+='<div class="tiny muted">This shows association, not proof. With few days logged, one bad night can swing the numbers.</div></section>';
+  const recent=Object.keys(days).filter(k=>days[k].gym).sort().reverse().slice(0,6);
+  if(recent.length){h+='<section class="card"><h2>Recent sessions</h2>'+recent.map(k=>'<div class="rank"><div class="grow"><b>'+long(k)+'</b><div class="small muted">'+esc(days[k].gymType||'Type not set')+' · elbow load '+esc(days[k].gymElbow||'not set')+'</div></div><button class="btn sm" data-a="goday" data-v="'+k+'">Edit</button></div>').join('')+'</section>'}
+  return h;
+}
+
+/* ===== DATA ===== */
+function renderData(){
+  const s=state.settings;
+  let h='<section class="card"><h2>Settings</h2>';
+  h+='<div class="field"><div class="lab">Affected elbow</div><div class="seg" role="group">'+['Left','Right','Both'].map(x=>'<button data-a="side" data-v="'+x+'" class="'+(s.side===x?'on':'')+'">'+x+'</button>').join('')+'</div></div>';
+  h+='<div class="field"><label for="start">Rehab start date</label><input id="start" type="date" data-c="start" value="'+esc(s.start)+'"></div>';
+  h+=tog('Show reminders in the app','remindOn',s.remindOn);
+  h+='<div class="grid2"><div class="field"><label for="t1">Rehab reminder after</label><input id="t1" type="time" data-c="t1" value="'+esc(s.t1)+'"></div><div class="field"><label for="t2">Evening log reminder after</label><input id="t2" type="time" data-c="t2" value="'+esc(s.t2)+'"></div></div>';
+  h+='<div class="small muted">Reminders appear as a banner on the Today tab while the app is open. A web page cannot send phone notifications, so pair this with a repeating alarm or calendar event on your phone.</div></section>';
+  h+='<section class="card"><h2>Back up</h2><div class="small muted">Your log is saved automatically. Copy a backup to keep a copy elsewhere, or paste one to restore.</div><div class="row"><button class="btn" data-a="export">Show backup text</button><button class="btn" data-a="copy">Copy backup</button></div>';
+  h+='<div class="field"><label for="io">Backup text</label><textarea id="io" data-c="io" placeholder="Backup appears here. Paste a backup here to restore.">'+esc(ui.io||'')+'</textarea></div><button class="btn" data-a="import">Restore from pasted text</button>'+(ui.msg?'<div class="small" role="status">'+esc(ui.msg)+'</div>':'')+'</section>';
+  h+='<section class="card"><h2>Reset</h2><div class="small muted">Deletes every log, test and score in this app.</div><button class="btn danger" data-a="reset">'+(ui.resetArm?'Tap again to delete everything':'Reset all data')+'</button></section>';
+  return h;
+}
+
+/* ===== render and events ===== */
+function render(){
+  const app=document.getElementById('app');
+  const f={today:renderToday,trends:renderTrends,gym:renderGym,plan:renderPlan,tests:renderTests,data:renderData}[ui.tab];
+  const y=window.scrollY;
+  app.innerHTML=f();
+  window.scrollTo(0,y);
+  paintHead();paintTabs();
+}
+function setDay(path,v){const d=dayOf(ui.date);setPath(d,path,v);touch('day-'+ui.date)}
+function toggleChip(field,v){const d=dayOf(ui.date);setPath(d,field,getPath(d,field)===v?null:v);touch('day-'+ui.date)}
+
+document.addEventListener('click',e=>{
+  const tg=e.target&&e.target.nodeType===1?e.target:(e.target&&e.target.parentElement);if(!tg)return;
+  const el=tg.closest('[data-a]');if(!el)return;
+  const a=el.dataset.a,v=el.dataset.v,f=el.dataset.f,k=el.dataset.k;
+  if(a!=='reset')ui.resetArm=false;
+  switch(a){
+    case 'tab':ui.tab=v;ui.msg='';window.scrollTo(0,0);break;
+    case 'dshift':{const n=addDays(ui.date,Number(v));if(n<=todayStr())ui.date=n;break}
+    case 'dtoday':ui.date=todayStr();break;
+    case 'gymday':{const d=dayOf(v);d.gym=!d.gym;touch('day-'+v);break}
+    case 'gtype':setDay('gymType',dayOf(ui.date).gymType===v?null:v);break;
+    case 'gelb':setDay('gymElbow',dayOf(ui.date).gymElbow===v?null:v);break;
+    case 'goday':ui.date=v;ui.tab='today';window.scrollTo(0,0);break;
+    case 'chip':toggleChip(f,Number(v));break;
+    case 'char':setDay('char',dayOf(ui.date).char===v?null:v);break;
+    case 'tog':if(f==='remindOn'){state.settings.remindOn=!state.settings.remindOn;touch('settings')}else setDay(f,!getPath(dayOf(ui.date),f));break;
+    case 'ex':ui.open[k]=!ui.open[k];break;
+    case 'mode':state.settings.mode=v;touch('settings');break;
+    case 'phase':state.settings.phase=v;if(v!=='reduce')state.settings.mode='full';else if(state.settings.mode==='full')state.settings.mode='iso';touch('settings');break;
+    case 'range':ui.range=v==='all'?'all':Number(v);break;
+    case 'achip':{const key=f.slice(2),cur=ui.draftA.scores[key];ui.draftA.scores[key]=cur===Number(v)?null:Number(v);break}
+    case 'anull':ui.draftA.scores[f.slice(2)]=null;break;
+    case 'asave':{const rec=JSON.parse(JSON.stringify(ui.draftA));rec.date=todayStr();const list=(state.assess&&state.assess.length?state.assess:[SEED_ASSESS]).filter(r=>r.date!==rec.date);list.push(rec);list.sort((x,y)=>x.date<y.date?-1:1);state.assess=list;touch('assess');break}
+    case 'pchip':{const cur=ui.draftP.items[f];ui.draftP.items[f]=cur===Number(v)?undefined:Number(v);break}
+    case 'psave':{const sc=prteeScore(ui.draftP.items);if(sc){const pfg=parseFloat(ui.draftP.pfg);const rec={date:todayStr(),pain:sc.pain,func:sc.func,total:sc.total,pfg:isFinite(pfg)?pfg:null,items:ui.draftP.items};state.prtee=state.prtee.filter(r=>r.date!==rec.date).concat(rec).sort((x,y)=>x.date<y.date?-1:1);touch('prtee');ui.draftP=null}break}
+    case 'side':state.settings.side=v;touch('settings');break;
+    case 'export':ui.io=JSON.stringify(state);break;
+    case 'copy':ui.io=JSON.stringify(state);try{navigator.clipboard.writeText(ui.io).then(()=>{ui.msg='Copied.';render()},()=>{ui.msg='Copy was blocked. Select the text and copy it by hand.';render()})}catch(err){ui.msg='Copy was blocked. Select the text and copy it by hand.'}break;
+    case 'import':{try{const s=JSON.parse(ui.io||'');if(!s||typeof s!=='object'||!s.days)throw new Error('bad');state.settings=Object.assign(state.settings,s.settings||{});state.days=s.days||{};state.assess=s.assess||null;state.prtee=s.prtee||[];['settings','assess','prtee'].forEach(i=>dirty.add(i));Object.keys(state.days).forEach(d=>dirty.add('day-'+d));persistLocal();if(store.col)flush();ui.draftA=null;ui.msg='Backup restored.'}catch(err){ui.msg='That text is not a valid backup.'}break}
+    case 'reset':if(!ui.resetArm){ui.resetArm=true}else{state.days={};state.assess=null;state.prtee=[];state.settings.start=todayStr();ui.draftA=null;ui.draftP=null;persistLocal();if(store.col){(async()=>{try{const snap=await store.col.get();(snap.docs||[]).forEach(d=>store.col.doc(d.id).delete())}catch(err){}})()}ui.resetArm=false;ui.msg='All data deleted.'}break;
+  }
+  render();
+});
+document.addEventListener('change',e=>{
+  const tg=e.target&&e.target.nodeType===1?e.target:(e.target&&e.target.parentElement);if(!tg)return;
+  const el=tg.closest('[data-c]');if(!el)return;
+  const c=el.dataset.c,k=el.dataset.k;
+  switch(c){
+    case 'done':{const d=dayOf(ui.date);d.done=d.done||{};d.done[k]=el.checked;touch('day-'+ui.date);break}
+    case 'load':{const d=dayOf(ui.date);d.load=d.load||{};d.load[k]=el.value;touch('day-'+ui.date);return}
+    case 'sleepH':{const n=parseFloat(el.value);setDay('sleepH',isFinite(n)?n:null);return}
+    case 'note':setDay('note',el.value);return;
+    case 'finger':ui.draftA.finger=el.value;return;
+    case 'anote':ui.draftA.note=el.value;return;
+    case 'pfg':ui.draftP.pfg=el.value;return;
+    case 'start':if(el.value){state.settings.start=el.value;touch('settings')}break;
+    case 't1':case 't2':state.settings[c]=el.value;touch('settings');break;
+    case 'io':ui.io=el.value;return;
+  }
+  render();
+});
+setInterval(()=>{if(Date.now()-touchAt<5000)return;if(ui.tab==='today'&&ui.date===todayStr()&&!(document.activeElement&&document.activeElement.matches&&document.activeElement.matches('input,textarea')))render()},60000);
+paintTabs();paintHead();
+initStore();
+</script>
+</body>
+</html>
