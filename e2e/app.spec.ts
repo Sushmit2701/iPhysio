@@ -164,3 +164,16 @@ test('import the prototype backup', async ({ page }) => {
   await page.goto('/#/today/2026-11-10');
   await expect(page.getByRole('button', { name: /Morning check-in/ })).toContainText('Pain 6/10');
 });
+
+test('privacy: no request leaves this origin while sync is off', async ({ page }) => {
+  const foreign: string[] = [];
+  page.on('request', (r) => {
+    const u = new URL(r.url());
+    if (!['localhost', '127.0.0.1'].includes(u.hostname) && u.protocol !== 'data:' && u.protocol !== 'blob:') foreign.push(r.url());
+  });
+  for (const s of ['today', 'trends', 'gym', 'plan', 'tests', 'more/data', 'more/reminders', 'more/sync', 'more/settings']) {
+    await page.goto(`/#/${s}`);
+    await page.waitForLoadState('networkidle');
+  }
+  expect(foreign).toEqual([]);
+});
