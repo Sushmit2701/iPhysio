@@ -8,3 +8,4 @@ playwright-report
 .env.local
 lighthouse-*.json
 share/
+docs/private/
