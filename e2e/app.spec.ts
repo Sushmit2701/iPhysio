@@ -177,3 +177,22 @@ test('privacy: no request leaves this origin while sync is off', async ({ page }
   }
   expect(foreign).toEqual([]);
 });
+
+test('trends: tap on the pain chart inspects that day', async ({ page }) => {
+  await fresh(page);
+  await press(page, page.getByRole('button', { name: /Evening check-in/ }));
+  await press(page, scale(page, 'painRehab').getByRole('button', { name: 'Pain during rehab: 4', exact: true }));
+  await press(page, page.getByRole('button', { name: 'Close' }));
+  await page.goto('/#/trends');
+  const chart = page.locator('svg[aria-label^="Pain chart"]');
+  await chart.scrollIntoViewIfNeeded();
+  const bb = (await chart.boundingBox())!;
+  // The rightmost point is today
+  const x = bb.x + bb.width - 12;
+  const y = bb.y + bb.height / 2;
+  if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) await page.touchscreen.tap(x, y);
+  else await page.mouse.click(x, y);
+  const readout = page.locator('[aria-live="polite"]').filter({ hasText: 'Daily peak' });
+  await expect(readout).toHaveCount(1);
+  await expect(readout).toContainText(/\d+ \w{3}\s*4\s*Daily peak/);
+});
