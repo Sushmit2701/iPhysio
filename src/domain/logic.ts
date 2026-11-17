@@ -327,3 +327,41 @@ export function bestStreak(days: Days, prio: ExKey[]): number {
   }
   return best;
 }
+
+export interface RoutineEffect {
+  nWith: number;
+  nWithout: number;
+  amWith: number | null;
+  amWithout: number | null;
+}
+/**
+ * Next-morning pain after nights with the bedtime routine vs logged nights without it.
+ * A night counts only if that day was logged and the next morning's pain was logged.
+ */
+export function routineEffect(days: Days, today: string): RoutineEffect {
+  const w: number[] = [];
+  const wo: number[] = [];
+  for (const s of Object.keys(days)) {
+    if (s >= today) continue;
+    const d = days[s];
+    const am = days[addDays(s, 1)]?.painAM;
+    if (!d || isEmptyDay(d) || !isNum(am)) continue;
+    (d.routine?.pm ? w : wo).push(am);
+  }
+  return { nWith: w.length, nWithout: wo.length, amWith: mean(w), amWithout: mean(wo) };
+}
+
+export function routineVerdict(r: RoutineEffect): { level: 'none' | 'ok' | 'mid'; title: string; body: string } {
+  if (r.nWith < 3 || r.nWithout < 3 || r.amWith === null || r.amWithout === null)
+    return {
+      level: 'none',
+      title: 'Not enough nights yet',
+      body: `Needs at least 3 nights with the bedtime routine and 3 without, each followed by a morning pain score (now ${r.nWith} and ${r.nWithout}).`,
+    };
+  const diff = r.amWith - r.amWithout;
+  const base = `Morning pain averages ${r.amWith.toFixed(1)} after the bedtime routine and ${r.amWithout.toFixed(1)} without (${diff > 0 ? '+' : ''}${diff.toFixed(1)}).`;
+  const small = r.nWith < 8 || r.nWithout < 8 ? ' Few nights so far, so treat this as a hint.' : '';
+  if (diff <= -1) return { level: 'ok', title: 'Mornings are easier after the routine', body: base + small };
+  if (diff >= 1) return { level: 'mid', title: 'Mornings are not easier after the routine', body: `${base} Check the curls are very light and pain stays at 3/10 or less.${small}` };
+  return { level: 'none', title: 'No clear difference yet', body: base + small };
+}

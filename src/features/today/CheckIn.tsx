@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { PainScale, Seg, Sheet, Stepper, Toggle } from '../../ui/controls';
 import { useApp } from '../../ui/app-context';
 import { useDayEdit } from '../../ui/useEdit';
-import { ADJ_LABEL } from '../../domain/content';
+import { ADJ_LABEL, NECK_FLAGS } from '../../domain/content';
 import { ADJUNCTS, ELBOW_LOADS, GYM_TYPES, PAIN_CHARS, type DayLog, type DayData } from '../../domain/types';
 import { weekdayDate } from '../../domain/dates';
 import { Icon } from '../../ui/Icon';
@@ -107,6 +107,31 @@ export const STEPS: Record<FlowKind, Step[]> = {
     painStep('painWorst', 'Worst pain today', 'The worst moment of the day, at any time.'),
     painStep('painPM', 'Evening pain', 'How it feels now, before bed.'),
     fnStep,
+    {
+      key: 'neck',
+      title: 'Neck and shoulder',
+      hint: 'Optional. Neck pain today, and anything over the shoulder or down the arm.',
+      body: (d, set) => (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <div className="label">Neck pain</div>
+            <PainScale name="neck" size="md" label="Neck pain" value={d.neck} onChange={(v) => set((x) => void (x.neck = v), `Neck pain: ${v}/10`)} />
+          </div>
+          {(
+            [
+              ['deltoidBurn', 'Burning over the shoulder (deltoid)'],
+              ['neckStiff', 'Neck stiffness'],
+              ['tingling', 'Tingling or numbness in the arm or hand'],
+            ] as const
+          ).map(([k, l]) => (
+            <Toggle key={k} tone={k === 'tingling' ? 'bad' : 'accent'} on={!!d.sx?.[k]} onChange={(v) => set((x) => void (x.sx = { ...x.sx, [k]: v }))}>
+              {l}
+            </Toggle>
+          ))}
+          {d.sx?.tingling && <p className="rounded-2xl p-3 text-[0.95rem]" style={{ background: 'color-mix(in srgb, var(--bad) 12%, var(--surface))' }}>{NECK_FLAGS}</p>}
+        </div>
+      ),
+    },
     {
       key: 'gym',
       title: 'Gym',

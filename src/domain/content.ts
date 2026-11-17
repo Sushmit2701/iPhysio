@@ -282,3 +282,94 @@ export const RED_FLAGS =
   'Seek review if pain is worsening, wakes you at night, or comes with numbness, tingling, weakness or shooting pain down the arm.';
 export const SOURCE_NOTE =
   'Built from a coaching video (1:12:54 to 2:38:43). The numbers are practical guidance, not trial-derived thresholds, and this app is not a diagnosis.';
+
+// ---------- Morning pain (second coaching video, 0:39 to 6:25) ----------
+export const MORNING_WHY: { title: string; body: string }[] = [
+  {
+    title: 'Delayed response',
+    body: 'Tendon pain from an activity, like lifting or sport, can take up to 48 hours to show. A bad morning can be paying for something from a day or two ago.',
+  },
+  {
+    title: 'Less blood flow overnight',
+    body: 'Tendons rely on movement for blood flow. Hours of lying still leave the tendon stiff and irritable on waking.',
+  },
+  {
+    title: 'Sleeping position',
+    body: 'Sleeping on your side or front can press on the elbow. Support the arm on a pillow with the elbow at 90 degrees, like a sling, so the forearm muscles and tendons stay relaxed.',
+  },
+];
+
+export const ROUTINE = {
+  circlesS: 60, // per direction
+  curlReps: 100,
+  steps: [
+    'Wrist circles: 1 minute one way, then 1 minute the other way.',
+    'Hammer curls with a very light weight: one set of 100, for blood flow, not strength.',
+  ],
+  note: 'Do it at bedtime and again in the morning. Keep pain at 3/10 or less: if the curls hurt, go lighter or do fewer.',
+  source: 'From a second coaching video on morning pain (0:39 to 6:25). Practical guidance, not trial evidence.',
+};
+
+// ---------- Neck and shoulder ----------
+export const NECK_LINKS: { title: string; body: string; signs: string }[] = [
+  {
+    title: 'Neck joints and muscles (most likely for stiffness and painful end-range rotation)',
+    body: 'Irritated facet joints around C4 to C6, or levator scapulae, upper trapezius and scalenes, can refer a deep ache over the shoulder and outer upper arm. Lateral elbow pain often has a neck contribution, and treating the neck alongside elbow rehab has modest evidence of helping.',
+    signs: 'Stiffness, pain at end-range rotation, pressing on the neck or holding end-range rotation reproduces the arm symptom.',
+  },
+  {
+    title: 'Nerve root (C5, C6)',
+    body: 'The skin over the outer deltoid is C5, and C5 and C6 also refer to the lateral elbow. Burning that comes and goes is more typical of nerve pain.',
+    signs: 'Positive Spurling, distraction eases it, tension test positive, hand on head eases it, any weakness or reflex change.',
+  },
+  {
+    title: 'Shoulder (rotator cuff, subacromial)',
+    body: 'Shoulder pain typically refers to the deltoid insertion. Guarding a painful elbow changes how you grip, push and pull, and the shoulder takes up the slack, as can extra pressing and lateral raises.',
+    signs: 'Painful arc, Hawkins or Neer positive, pain on resisted abduction or external rotation, pain lying on that side.',
+  },
+  {
+    title: 'Trigger points',
+    body: 'Supraspinatus trigger points classically refer to both the lateral deltoid and the lateral epicondyle.',
+    signs: 'A tender spot in supraspinatus or infraspinatus that recreates the burning.',
+  },
+  {
+    title: 'The rehab itself',
+    body: 'The radial nerve test and glide position loads the nerve all the way up the arm. Repeating it often can leave the arm irritable.',
+    signs: 'Started after testing or gliding, or after particular arm positions.',
+  },
+];
+
+export const SPURLING = {
+  how: [
+    'Sit upright, shoulders relaxed.',
+    'Extend the neck slightly, side-bend toward the painful side and rotate a little toward it.',
+    'An examiner presses gently straight down through the top of the head for a few seconds. Compare both sides.',
+  ],
+  positive: 'Positive only if it reproduces the arm symptom (the deltoid burning, or symptoms down the arm). Neck pain alone is not positive.',
+  accuracy:
+    'Specificity is high (about 85 to 95%), so a positive test makes a nerve root likely. Sensitivity is low to moderate (about 30 to 60%), so a negative test does not rule it out, and a self-test misses more.',
+  cluster:
+    'Wainner cluster: Spurling positive, distraction eases symptoms, upper limb tension test A positive, rotation to that side under 60 degrees. Three of four makes a root likely; four of four very likely.',
+  avoid: 'Skip it after recent neck trauma or with possible instability, and stop if it causes dizziness, double vision, drop attacks, both-arm symptoms or sharp shooting pain.',
+};
+
+export const NECK_CHECKS = [
+  'Rotation range, left against right (under 60 degrees counts toward the cluster).',
+  'Distraction: someone lifts the head gently. Easing of the arm burning points to a root.',
+  'Shoulder abduction relief: hand on head. Easing points to a root.',
+  'Hold end-range rotation or extension for 20 to 30 seconds, and press over the C4 to C6 facets, levator scapulae and upper trapezius. Reproducing the deltoid burning points to the neck.',
+  'Neuro screen: deltoid and biceps power, biceps and brachioradialis reflexes, light touch over the outer deltoid.',
+  'Shoulder: painful arc, Hawkins, resisted abduction and external rotation.',
+];
+
+export const NECK_ROUTINE = [
+  'Gentle rotation and side-bending through the pain-free range, 5 to 10 each way, several times a day.',
+  'Chin tucks: slide the head straight back, hold 5 seconds, 10 times.',
+  'Shoulder blade setting: draw the shoulder blades back and down, hold 5 seconds, 10 times. Light rows are fine.',
+  'Heat over the neck and upper shoulder if stiff.',
+  'Screen at eye level, and break up long spells looking down at a phone or laptop.',
+  'For now, ease off heavy shrugs and overhead pressing, and anything that makes you crane or brace through the neck.',
+];
+
+export const NECK_FLAGS =
+  'Get reviewed if you notice weakness, numbness or spreading tingling, symptoms in both arms, night pain that does not ease with position, worsening, dizziness or trouble with balance or fine hand control. Neck stiffness with fever, headache or light sensitivity needs urgent care. Most mechanical neck pain settles in 2 to 6 weeks.';

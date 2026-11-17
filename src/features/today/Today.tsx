@@ -5,11 +5,12 @@ import { Icon } from '../../ui/Icon';
 import { go } from '../../ui/route';
 import { useDayEdit } from '../../ui/useEdit';
 import { addDays, diffDays, longDate, nowHM } from '../../domain/dates';
-import { EX, PHASES, RED_FLAGS, effectiveMode, variantFor } from '../../domain/content';
+import { EX, MORNING_WHY, NECK_FLAGS, PHASES, RED_FLAGS, ROUTINE, effectiveMode, variantFor } from '../../domain/content';
 import { adherence, dueChecks, sessionDone, todayAdvice } from '../../domain/logic';
 import { patchSettings } from '../../db/repo';
 import { TEST_KEYS, type DayData, type ExKey } from '../../domain/types';
 import { CheckInFlow, NoteField, firstOpenStep, flowSummary, type FlowKind } from './CheckIn';
+import { RoutineFlow, type RoutineWhen } from './Routine';
 import { ExerciseHowTo } from './ExerciseHowTo';
 import { haptic } from '../../ui/feedback';
 import { ELBOW_LOADS, GYM_TYPES } from '../../domain/types';
@@ -23,6 +24,7 @@ export function Today({ date: dateArg }: { date?: string }) {
   const isToday = date === today;
   const day: DayData = days[date] ?? {};
   const [flow, setFlow] = useState<{ kind: FlowKind; at: number } | null>(null);
+  const [routine, setRoutine] = useState<RoutineWhen | null>(null);
   const edit = useDayEdit();
   const advice = todayAdvice(days, prio, date, settings.phase);
   const adviceTone = advice.action === 'hold' && advice.title.startsWith('Within') ? 'ok' : TONE[advice.action];
@@ -98,6 +100,42 @@ export function Today({ date: dateArg }: { date?: string }) {
           );
         })}
       </div>
+
+      {day.sx?.tingling && (
+        <StatusBox tone="hi" icon="alert" title="Tingling or numbness logged">
+          {NECK_FLAGS}
+        </StatusBox>
+      )}
+
+      <Card title="Morning pain routine">
+        <p className="hint">Wrist circles, 1 minute each way, then 100 very light hammer curls. Bedtime and morning, to keep blood moving through the tendon.</p>
+        <div className="grid grid-cols-2 gap-3">
+          {(['am', 'pm'] as const).map((w) => {
+            const isDone = !!day.routine?.[w];
+            return (
+              <button key={w} type="button" onClick={() => setRoutine(w)} className="neu-sm flex min-h-16 items-center gap-3 rounded-2xl px-3 text-left" aria-label={`${w === 'am' ? 'Morning' : 'Bedtime'} routine${isDone ? ', done' : ''}`}>
+                <span className={`grid h-10 w-10 flex-none place-items-center rounded-full ${isDone ? 'grad-panel' : 'neu-in text-accent'}`}>
+                  <Icon name={isDone ? 'check' : w === 'am' ? 'sun' : 'moon'} size={20} />
+                </span>
+                <span className="flex flex-col">
+                  <b>{w === 'am' ? 'Morning' : 'Bedtime'}</b>
+                  <span className="text-sm text-muted">{isDone ? 'Done' : '4 min'}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <Disclosure summary="Why mornings hurt">
+          <ul className="flex flex-col gap-2 text-[0.95rem]">
+            {MORNING_WHY.map((m) => (
+              <li key={m.title}>
+                <b>{m.title}.</b> {m.body}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-sm text-muted">{ROUTINE.source}</p>
+        </Disclosure>
+      </Card>
 
       <section className="card flex flex-col gap-0 overflow-hidden p-0">
         <div className="flex flex-col gap-3 p-5">
@@ -177,6 +215,7 @@ export function Today({ date: dateArg }: { date?: string }) {
       <p className="px-1 text-sm text-muted">{RED_FLAGS}</p>
 
       {flow && <CheckInFlow kind={flow.kind} date={date} startAt={flow.at} onClose={() => setFlow(null)} />}
+      {routine && <RoutineFlow date={date} when={routine} onClose={() => setRoutine(null)} />}
     </div>
   );
 }

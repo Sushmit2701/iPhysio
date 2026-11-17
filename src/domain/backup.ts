@@ -2,7 +2,7 @@
 import { isDate } from './dates';
 import { isNum, dayPeak } from './logic';
 import type { Appointment, Assessment, DayLog, ExKey, PrteeRecord, Settings, SetLog } from './types';
-import { ADJUNCTS, APPT_KINDS, ELBOW_LOADS, GYM_TYPES, PAIN_CHARS, PHASE_ORDER, TEST_KEYS } from './types';
+import { ADJUNCTS, APPT_KINDS, ELBOW_LOADS, GYM_TYPES, PAIN_CHARS, PHASE_ORDER, SYMPTOMS, TEST_KEYS } from './types';
 
 export interface Snapshot {
   settings: Settings;
@@ -46,6 +46,11 @@ export function sanitizeDay(date: string, raw: unknown, fallbackT: number): DayL
   const adj = isObj(d.adj)
     ? (Object.fromEntries(ADJUNCTS.filter((k) => typeof (d.adj as Obj)[k] === 'boolean').map((k) => [k, (d.adj as Obj)[k]])) as DayLog['adj'])
     : undefined;
+  const bools = <K extends string>(v: unknown, keys: readonly K[]) => {
+    if (!isObj(v)) return undefined;
+    const o = Object.fromEntries(keys.filter((k) => typeof v[k] === 'boolean').map((k) => [k, v[k]])) as Partial<Record<K, boolean>>;
+    return Object.keys(o).length ? o : undefined;
+  };
   const sets = exMap<SetLog[]>(d.sets, (v) =>
     Array.isArray(v)
       ? v.filter(isObj).map((s) => clean({ reps: inRange(s.reps, 0, 500), holdS: inRange(s.holdS, 0, 600), load: str(s.load, 60), at: isNum(s.at) ? s.at : fallbackT }) as SetLog)
@@ -71,6 +76,9 @@ export function sanitizeDay(date: string, raw: unknown, fallbackT: number): DayL
     gymType: oneOf(GYM_TYPES, d.gymType),
     gymElbow: oneOf(ELBOW_LOADS, d.gymElbow),
     adj: adj && Object.keys(adj).length ? adj : undefined,
+    routine: bools(d.routine, ['am', 'pm'] as const),
+    neck: inRange(d.neck, 0, 10),
+    sx: bools(d.sx, SYMPTOMS),
     note: str(d.note),
     updatedAt: t,
   } as DayLog);
@@ -202,6 +210,7 @@ export function toCSV(days: DayLog[]): string {
     'sleepH', 'sleepQ', 'wokePain', 'flare', 'gym', 'gymType', 'gymElbow',
     ...TEST_KEYS.flatMap((k) => [`done_${k}`, `load_${k}`, `sets_${k}`]),
     ...ADJUNCTS.map((a) => `adj_${a}`),
+    'routineAM', 'routinePM', 'neck', ...SYMPTOMS.map((x) => `sx_${x}`),
     'note',
   ];
   const rows = days
@@ -216,6 +225,7 @@ export function toCSV(days: DayLog[]): string {
         (d.sets?.[k] ?? []).map((s) => (s.holdS ? `${s.holdS}s` : `${s.reps ?? 0}r`) + (s.load ? `@${s.load}` : '')).join(' '),
       ]),
       ...ADJUNCTS.map((a) => (d.adj?.[a] ? 1 : '')),
+      d.routine?.am ? 1 : '', d.routine?.pm ? 1 : '', d.neck, ...SYMPTOMS.map((x) => (d.sx?.[x] ? 1 : '')),
       d.note,
     ]);
   return [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';

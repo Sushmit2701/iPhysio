@@ -1,8 +1,8 @@
 import { useApp } from '../../ui/app-context';
-import { Card, StatusBox } from '../../ui/controls';
+import { Card, Disclosure, StatusBox } from '../../ui/controls';
 import { Icon } from '../../ui/Icon';
 import { patchSettings } from '../../db/repo';
-import { PHASES, RED_FLAGS, SOURCE_NOTE } from '../../domain/content';
+import { MORNING_WHY, NECK_CHECKS, NECK_FLAGS, NECK_LINKS, NECK_ROUTINE, PHASES, RED_FLAGS, ROUTINE, SOURCE_NOTE, SPURLING } from '../../domain/content';
 import { advanceCriteria, nextPhase, phaseSuggestion } from '../../domain/logic';
 import { PHASE_ORDER, type Phase } from '../../domain/types';
 
@@ -127,6 +127,67 @@ export default function Plan() {
           <li><b>Small wins:</b> more confidence with a mug or door, less morning pain, pain changing from sharp to aching, shorter flares.</li>
           <li><b>Travel:</b> a 5 to 10 minute band version keeps momentum.</li>
         </ul>
+      </Card>
+
+      <Card title="Morning pain">
+        <ul className="flex flex-col gap-2">
+          {MORNING_WHY.map((m) => (
+            <li key={m.title}>
+              <b>{m.title}.</b> {m.body}
+            </li>
+          ))}
+        </ul>
+        <h3 className="text-lg">Bedtime and morning routine</h3>
+        <ol className="flex list-decimal flex-col gap-1.5 pl-5">
+          {ROUTINE.steps.map((x) => (
+            <li key={x}>{x}</li>
+          ))}
+        </ol>
+        <p className="hint">{ROUTINE.note} Start it from Today; Trends shows whether mornings are easier after the bedtime routine.</p>
+        <p className="text-sm text-muted">{ROUTINE.source}</p>
+      </Card>
+
+      <Card title="Neck and shoulder">
+        <p className="text-[0.95rem]">
+          Burning over the deltoid on the same side, with neck stiffness and pain at end-range rotation, most likely comes from the neck joints and muscles referring pain to the shoulder. A nerve root, the shoulder itself, trigger points and the nerve test position are the other possibilities. Log it in the evening check-in to see what it tracks with.
+        </p>
+        <Disclosure summary="How it can be connected">
+          <ul className="flex flex-col gap-3 text-[0.95rem]">
+            {NECK_LINKS.map((l) => (
+              <li key={l.title}>
+                <b>{l.title}.</b> {l.body} <span className="text-muted">Points to it: {l.signs}</span>
+              </li>
+            ))}
+          </ul>
+        </Disclosure>
+        <Disclosure summary="Spurling test">
+          <div className="flex flex-col gap-2 text-[0.95rem]">
+            <ol className="flex list-decimal flex-col gap-1.5 pl-5">
+              {SPURLING.how.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ol>
+            <p>{SPURLING.positive}</p>
+            <p className="text-muted">{SPURLING.accuracy}</p>
+            <p className="text-muted">{SPURLING.cluster}</p>
+            <p className="text-muted">{SPURLING.avoid}</p>
+          </div>
+        </Disclosure>
+        <Disclosure summary="Other self-checks">
+          <ul className="flex list-disc flex-col gap-1.5 pl-5 text-[0.95rem]">
+            {NECK_CHECKS.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+        </Disclosure>
+        <Disclosure summary="Neck routine">
+          <ul className="flex list-disc flex-col gap-1.5 pl-5 text-[0.95rem]">
+            {NECK_ROUTINE.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+        </Disclosure>
+        <p className="text-sm text-muted">{NECK_FLAGS}</p>
       </Card>
 
       <StatusBox tone="none" icon="alert" title="When to get it checked">

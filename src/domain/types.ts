@@ -15,6 +15,10 @@ export type Phase = (typeof PHASE_ORDER)[number];
 export type Mode = 'iso' | 'pump' | 'full';
 
 export const ADJUNCTS = ['strap', 'heat', 'massage', 'pillow', 'collagen'] as const;
+
+/** Neck and shoulder symptoms logged in the evening check-in. */
+export const SYMPTOMS = ['deltoidBurn', 'neckStiff', 'tingling'] as const;
+export type Symptom = (typeof SYMPTOMS)[number];
 export type Adjunct = (typeof ADJUNCTS)[number];
 
 /** One logged set inside a guided session. */
@@ -49,6 +53,11 @@ export interface DayData {
   gymType?: GymType | null;
   gymElbow?: ElbowLoad | null;
   adj?: Partial<Record<Adjunct, boolean>>;
+  /** Blood-flow routine (wrist circles + very light hammer curls), morning and bedtime. */
+  routine?: { am?: boolean; pm?: boolean };
+  /** Neck pain 0-10 and neck/shoulder symptoms. */
+  neck?: number | null;
+  sx?: Partial<Record<Symptom, boolean>>;
   note?: string;
 }
 

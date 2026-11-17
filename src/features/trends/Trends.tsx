@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useApp } from '../../ui/app-context';
-import { Card, Seg, Tile } from '../../ui/controls';
+import { Card, Seg, StatusBox, Tile } from '../../ui/controls';
 import { Chart, DataTable, Legend, type Series } from '../../ui/Chart';
 import { addDays, dateRange, diffDays, shortDate } from '../../domain/dates';
 import {
-  adherence, bestStreak, changeFromBaseline, dayPeak, firstAssessment, flareRuns, isNum, mean, roll7, screenMax, sessionDone, streak, windowPeaks,
+  adherence, bestStreak, changeFromBaseline, routineEffect, routineVerdict, dayPeak, firstAssessment, flareRuns, isNum, mean, roll7, screenMax, sessionDone, streak, windowPeaks,
 } from '../../domain/logic';
 import { SEED_ASSESS } from '../../domain/seed';
 import type { DayData } from '../../domain/types';
@@ -56,6 +56,11 @@ export default function Trends() {
   const sleepSeries: Series[] = [{ key: 'sleep', label: 'Hours slept', vals: get((d) => d.sleepH), color: 'var(--c1)', bar: true, fmt: (v) => `${v} h` }];
   const adhSeries: Series[] = [{ key: 'adh', label: 'Priority done', vals: dates.map((s) => adherence(days[s], prio)), color: 'var(--c2)', bar: true, fmt: (v) => `${v}%` }];
   const hasAny = (s: Series[]) => s.some((x) => x.vals.some(isNum));
+  const neckSeries: Series[] = [{ key: 'neck', label: 'Neck pain', vals: get((d) => d.neck), color: 'var(--c1)', width: 2 }];
+  const sxDays = (k: 'deltoidBurn' | 'neckStiff' | 'tingling') => dates.filter((s) => days[s]?.sx?.[k]).length;
+  const burnMarks = dates.map((s, i) => (days[s]?.sx?.deltoidBurn ? i : -1)).filter((i) => i >= 0);
+  const rv = routineVerdict(routineEffect(days, today));
+  const routineDays = dates.filter((s) => days[s]?.routine?.am || days[s]?.routine?.pm).length;
   const sq = get((d) => d.sleepQ);
   const woke = dates.filter((s) => days[s]?.wokePain).length;
 
@@ -145,6 +150,40 @@ export default function Trends() {
           <Empty>No sleep logged yet. It is in the morning check-in.</Empty>
         )}
       </Card>
+
+      {(routineDays > 0 || rv.level !== 'none') && (
+        <Card title="Morning routine">
+          <p className="hint">Routine done on {routineDays} of {dates.length} days shown.</p>
+          <StatusBox tone={rv.level} title={rv.title}>
+            {rv.body}
+          </StatusBox>
+        </Card>
+      )}
+
+      {(hasAny(neckSeries) || sxDays('deltoidBurn') + sxDays('neckStiff') + sxDays('tingling') > 0) && (
+        <Card title="Neck and shoulder">
+          <p className="hint">Shaded days had burning over the shoulder. Compare with pain and gym days to see what it tracks with.</p>
+          {hasAny(neckSeries) && (
+            <Chart
+              label="Neck pain"
+              dates={dates}
+              series={neckSeries}
+              ymax={10}
+              ticks={[0, 5, 10]}
+              marks={burnMarks}
+              height={150}
+              readoutExtra={(i) => {
+                const sx = days[dates[i]]?.sx;
+                const t = [sx?.deltoidBurn && 'shoulder burning', sx?.neckStiff && 'stiff', sx?.tingling && 'tingling'].filter(Boolean).join(', ');
+                return t ? <span className="font-semibold">{t}</span> : null;
+              }}
+            />
+          )}
+          <p className="text-[0.95rem]">
+            Shoulder burning on {sxDays('deltoidBurn')} days, neck stiffness on {sxDays('neckStiff')}, tingling or numbness on {sxDays('tingling')}.
+          </p>
+        </Card>
+      )}
 
       <Card title="Rehab done">
         <p className="hint">Share of priority exercises ticked each day. Consistency drives recovery more than intensity.</p>

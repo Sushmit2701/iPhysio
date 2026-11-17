@@ -245,3 +245,24 @@ describe('matches the prototype on random data', () => {
     }
   });
 });
+
+describe('routineEffect', () => {
+  it('compares next-morning pain after nights with and without the bedtime routine', () => {
+    const days: Days = {};
+    for (let i = 1; i <= 8; i++) {
+      const d = addDays(T, -2 * i);
+      days[d] = { routine: { pm: i % 2 === 0 }, painWorst: 4 };
+      days[addDays(d, 1)] = { painAM: i % 2 === 0 ? 2 : 5 };
+    }
+    const r = L.routineEffect(days, T);
+    expect(r).toMatchObject({ nWith: 4, amWith: 2 });
+    // nights without: the 4 odd nights, plus the logged "next morning" days that are followed by a logged day
+    expect(r.amWithout).toBeGreaterThan(r.amWith!);
+    expect(L.routineVerdict(r).level).toBe('ok');
+  });
+  it('ignores empty nights, unscored mornings and today', () => {
+    const days: Days = { [addDays(T, -1)]: {}, [T]: { painAM: 3 }, [addDays(T, -3)]: { routine: { pm: true } } };
+    expect(L.routineEffect(days, T)).toMatchObject({ nWith: 0, nWithout: 0 });
+    expect(L.routineVerdict(L.routineEffect(days, T)).title).toMatch(/Not enough/);
+  });
+});

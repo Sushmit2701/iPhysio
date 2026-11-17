@@ -198,3 +198,44 @@ test('trends: tap on the pain chart inspects that day', async ({ page }) => {
   await expect(readout).toHaveCount(1);
   await expect(readout).toContainText(/\d+ \w{3}\s*4\s*Daily peak/);
 });
+
+test('morning routine: wrist circles both ways, light curls, marked done', async ({ page }) => {
+  await page.clock.install();
+  await fresh(page);
+  await press(page, page.getByRole('button', { name: /^Morning routine/ }));
+  await press(page, page.getByRole('button', { name: 'Start routine' }));
+  await expect(page.getByRole('timer', { name: /^Circles one way/ })).toBeVisible();
+  await page.clock.runFor(61_000);
+  await expect(page.getByRole('timer', { name: /^Other way/ })).toBeVisible();
+  await page.clock.runFor(61_000);
+  const curl = page.getByRole('button', { name: /Count a curl/ });
+  for (let i = 0; i < 3; i++) await press(page, curl);
+  await expect(curl).toHaveAccessibleName('Count a curl, 3 so far');
+  await press(page, page.getByRole('button', { name: 'Finish routine' }));
+  await expect(page.getByRole('button', { name: 'Morning routine, done' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Morning routine, done' })).toBeVisible();
+});
+
+test('neck and shoulder step: log neck pain and burning, see it in Trends', async ({ page }) => {
+  await fresh(page);
+  await press(page, page.getByRole('button', { name: /Evening check-in/ }));
+  for (let i = 0; i < 4; i++) await press(page, page.getByRole('button', { name: 'Next', exact: true }));
+  await expect(page.getByRole('heading', { name: 'Neck and shoulder' })).toBeVisible();
+  const four = scale(page, 'neck').getByRole('button', { name: 'Neck pain: 4', exact: true });
+  await press(page, four);
+  await expect(four).toHaveAttribute('aria-pressed', 'true');
+  const burn = page.getByRole('switch', { name: /Burning over the shoulder/ });
+  await press(page, burn);
+  await expect(burn).toHaveAttribute('aria-checked', 'true');
+  await press(page, page.getByRole('switch', { name: /Tingling or numbness/ }));
+  await expect(page.getByRole('dialog').getByText(/Get reviewed if you notice weakness/)).toBeVisible();
+  await press(page, page.getByRole('button', { name: 'Close' }));
+  await expect(page.getByText('Tingling or numbness logged')).toBeVisible();
+  await page.goto('/#/trends');
+  await expect(page.getByRole('heading', { name: 'Neck and shoulder' })).toBeVisible();
+  await expect(page.getByText(/Shoulder burning on 1 days/)).toBeVisible();
+  await page.goto('/#/plan');
+  await press(page, page.getByRole('button', { name: 'Spurling test' }));
+  await expect(page.getByText(/Positive only if it reproduces the arm symptom/)).toBeVisible();
+});

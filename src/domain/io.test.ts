@@ -42,7 +42,8 @@ const PROTO = {
       gym: true, gymType: 'Pull', gymElbow: 'High',
       adj: { strap: true, heat: false }, note: 'rows, "heavy"', _t: 1763000000000,
     },
-    '2026-11-13': { painAM: 99, char: 'Weird', gymType: 'Swim' },
+    '2026-11-13': { painAM: 99, char: 'Weird', gymType: 'Swim', neck: 11, sx: { deltoidBurn: 'yes' }, routine: { am: 1 } },
+    '2026-11-14': { neck: 4, sx: { deltoidBurn: true, neckStiff: false }, routine: { am: true, pm: false } },
     'bad-date': { painAM: 3 },
   },
   assess: [{ date: '2026-11-12', scores: { ecrl: 8, ecrb: 4, ecu: 4, sup: 8, ed: 8, nerve: null }, finger: '3rd (middle)', note: 'x' }],
@@ -52,7 +53,8 @@ const PROTO = {
 describe('import prototype backup', () => {
   it('maps every field and drops out-of-range values', () => {
     const r = parseBackup(JSON.stringify(PROTO), 99);
-    expect(r.counts).toEqual({ days: 2, assess: 1, prtee: 1, appts: 0 });
+    expect(r.counts).toEqual({ days: 3, assess: 1, prtee: 1, appts: 0 });
+    expect(r.days!.find((x) => x.date === '2026-11-14')).toMatchObject({ neck: 4, sx: { deltoidBurn: true, neckStiff: false }, routine: { am: true, pm: false } });
     const d = r.days!.find((x) => x.date === '2026-11-12')!;
     expect(d).toMatchObject({
       painAM: 6, painWorst: 8, char: 'Burning', fn: { cap: 7, mug: 5, door: 4 }, sleepH: 6.5, sleepQ: 3,
@@ -82,6 +84,12 @@ describe('import prototype backup', () => {
     expect(head.startsWith('date,painAM,painRehab,painWorst,painPM,peak')).toBe(true);
     expect(row).toContain('"rows, ""heavy"""');
     expect(row.split(',').slice(0, 6)).toEqual(['2026-11-12', '6', '3', '8', '5', '8']);
+    expect(head).toContain('routineAM,routinePM,neck,sx_deltoidBurn,sx_neckStiff,sx_tingling,note');
+    const row14 = csv.split('\r\n').find((l) => l.startsWith('2026-11-14'))!.split(',');
+    const h = head.split(',');
+    expect(row14[h.indexOf('neck')]).toBe('4');
+    expect(row14[h.indexOf('sx_deltoidBurn')]).toBe('1');
+    expect(row14[h.indexOf('routineAM')]).toBe('1');
   });
 });
 

@@ -47,3 +47,13 @@ Equipment: weights beat bands or flex bars for long-term results; bands are fine
 - Daily 0-10 pain (morning, during rehab, worst, evening), pain character, task pain (bottle cap, mug grip, door handle), sleep hours/quality/woke with pain.
 - Weekly PRTEE (15 items: 5 pain items summed 0-50, 10 function items summed then halved 0-50, total 0-100, lower better; about 11 points often cited as meaningful change) and optional pain-free grip strength.
 - Gym impact: compare next-morning pain and peak pain over the next 48 h after training days vs rest days, split by how much the session loaded the elbow.
+
+## Morning pain (second coaching video, 0:39 to 6:25)
+- Why: delayed tendon response (up to 48 h); less blood flow after hours without movement; side or front sleeping compresses the elbow.
+- Sleep with the arm on a pillow, elbow at 90 degrees (like a sling).
+- Bedtime and morning routine for blood flow: wrist circles 1 minute each direction, then hammer curls with a very light weight, 1 set of 100. Keep pain at 3/10 or less.
+
+## Neck and shoulder (added from clinical discussion, not from the video)
+- Burning over the ipsilateral deltoid with neck stiffness and painful end-range rotation: most likely mechanical neck pain (facet or muscle) with somatic referral; also consider C5/C6 root, rotator cuff referral, supraspinatus trigger points, and neural irritation from the radial nerve test position.
+- Self-checks: Spurling (specific, not sensitive), Wainner cluster, distraction, shoulder abduction relief, reproduction with sustained end-range or palpation, C5/C6 neuro screen, shoulder tests.
+- Red flags: weakness, numbness, spreading or bilateral symptoms, unremitting night pain, myelopathy signs, fever with neck stiffness.
