@@ -5,7 +5,8 @@ import { Icon } from '../../ui/Icon';
 import { useDayEdit } from '../../ui/useEdit';
 import { beep, haptic, keepAwake, unlockAudio } from '../../ui/feedback';
 import { SetWave, Vinyl, fmtS } from '../../ui/Player';
-import { ROUTINE } from '../../domain/content';
+import { PACE_OPTIONS, ROUTINE } from '../../domain/content';
+import { patchSettings } from '../../db/repo';
 import { weekdayDate } from '../../domain/dates';
 
 export type RoutineWhen = 'am' | 'pm';
@@ -19,10 +20,10 @@ export function RoutineFlow({ date, when: initial, onClose }: { date: string; wh
   const [stage, setStage] = useState<Stage>('intro');
   const [startAt, setStartAt] = useState(0);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
-  const [reps, setReps] = useState(0);
   const [now, setNow] = useState(Date.now());
   const fired = useRef('');
-  const timed = stage === 'cw' || stage === 'ccw';
+  const timed = stage === 'cw' || stage === 'ccw' || stage === 'curls';
+  const pace = settings.repPaceS;
   useEffect(() => keepAwake(), []);
   useEffect(() => {
     if (!timed || pausedAt !== null) return;
@@ -30,7 +31,9 @@ export function RoutineFlow({ date, when: initial, onClose }: { date: string; wh
     return () => clearInterval(id);
   }, [timed, pausedAt]);
   const elapsed = ((pausedAt ?? now) - startAt) / 1000;
-  const total = ROUTINE.circlesS;
+  const total = stage === 'curls' ? ROUTINE.curlReps * pace : ROUTINE.circlesS;
+  const repNow = Math.min(ROUTINE.curlReps, Math.floor(elapsed / pace) + 1);
+  const repsDone = Math.min(ROUTINE.curlReps, Math.floor(elapsed / pace));
 
   const begin = (s: Stage) => {
     setStage(s);
@@ -39,13 +42,23 @@ export function RoutineFlow({ date, when: initial, onClose }: { date: string; wh
     setPausedAt(null);
     fired.current = '';
   };
-  // Switch direction, then move to the curls, when each minute is up
+  // Switch direction, then curls, then finish; a soft tick per curl so you can follow the pace
   useEffect(() => {
-    if (!timed || pausedAt !== null || elapsed < total || fired.current === stage) return;
-    fired.current = stage;
-    beep(settings.sound, stage === 'cw' ? 660 : 880, 250);
-    haptic(settings.haptics, [60, 60, 60]);
-    begin(stage === 'cw' ? 'ccw' : 'curls');
+    if (!timed || pausedAt !== null) return;
+    if (elapsed >= total) {
+      if (fired.current === stage) return;
+      fired.current = stage;
+      beep(settings.sound, stage === 'curls' ? 880 : stage === 'cw' ? 660 : 880, 250);
+      haptic(settings.haptics, [60, 60, 60]);
+      if (stage === 'curls') finish(ROUTINE.curlReps);
+      else begin(stage === 'cw' ? 'ccw' : 'curls');
+      return;
+    }
+    if (stage === 'curls' && repsDone > 0 && fired.current !== `c${repsDone}`) {
+      fired.current = `c${repsDone}`;
+      if (repsDone % 10 === 0) beep(settings.sound, 760, 90, 0.12);
+      else beep(settings.sound, 520, 40, 0.05);
+    }
   });
 
   const finish = (n: number | null) => {
@@ -54,7 +67,7 @@ export function RoutineFlow({ date, when: initial, onClose }: { date: string; wh
   };
 
   const done = !!days[date]?.routine?.[when];
-  const label = stage === 'cw' ? 'Circles one way' : stage === 'ccw' ? 'Other way' : stage === 'curls' ? 'Light hammer curls' : 'Ready';
+  const label = stage === 'cw' ? 'Circles one way' : stage === 'ccw' ? 'Other way' : 'Ready';
 
   return (
     <Sheet title={`${when === 'am' ? 'Morning' : 'Bedtime'} routine · ${weekdayDate(date)}`} onClose={onClose}>
@@ -75,31 +88,26 @@ export function RoutineFlow({ date, when: initial, onClose }: { date: string; wh
                 <li key={s}>{s}</li>
               ))}
             </ol>
-            <p className="hint">{ROUTINE.note}</p>
+            <div className="label">
+              Curl pace <span className="font-normal text-muted">· {ROUTINE.curlReps} curls take {fmtS(ROUTINE.curlReps * pace)}</span>
+            </div>
+            <Seg label="Curl pace" options={PACE_OPTIONS.map((x) => ({ v: String(x), label: `${x} s` }))} value={String(pace)} onChange={(v) => void patchSettings({ repPaceS: Number(v) })} />
+            <p className="hint">{ROUTINE.note} A soft tick marks each curl, with a stronger one every 10.</p>
             {done && <p className="font-semibold text-accent">Already done today. You can do it again.</p>}
           </div>
         )}
 
         {stage === 'curls' ? (
-          <button
-            type="button"
-            aria-label={`Count a curl, ${reps} so far`}
-            onClick={() => {
-              haptic(settings.haptics);
-              if ((reps + 1) % 10 === 0) beep(settings.sound, 520, 60, 0.08);
-              setReps(Math.min(ROUTINE.curlReps, reps + 1));
-            }}
-            className="w-full max-w-[19rem] select-none"
-          >
-            <Vinyl frac={reps / ROUTINE.curlReps} big={String(reps)} label="Tap per curl" sub={`of ${ROUTINE.curlReps}, very light`} spinning={false} />
-          </button>
+          <div className="w-full max-w-[19rem]" role="timer" aria-label={`Curl ${repNow} of ${ROUTINE.curlReps}, ${Math.max(0, Math.ceil(total - elapsed))} seconds left`}>
+            <Vinyl frac={elapsed / total} big={fmtS(Math.max(0, total - elapsed + 0.999))} label={`Curl ${repNow} of ${ROUTINE.curlReps}`} sub="very light" spinning={pausedAt === null} />
+          </div>
         ) : (
           <div className="w-full max-w-[19rem]" role="timer" aria-label={stage === 'intro' ? 'Ready' : `${label}, ${Math.max(0, Math.ceil(total - elapsed))} seconds left`}>
             <Vinyl
               frac={stage === 'intro' ? 0 : elapsed / total}
-              big={stage === 'intro' ? '2:00' : String(Math.max(0, Math.ceil(total - elapsed)))}
-              label={stage === 'intro' ? 'Wrist circles' : label}
-              sub={stage === 'intro' ? 'then 100 light curls' : 'seconds'}
+              big={stage === 'intro' ? fmtS(2 * ROUTINE.circlesS + ROUTINE.curlReps * pace) : String(Math.max(0, Math.ceil(total - elapsed)))}
+              label={stage === 'intro' ? 'Circles and curls' : label}
+              sub={stage === 'intro' ? 'minutes in total' : 'seconds'}
               spinning={timed && pausedAt === null}
             />
           </div>
@@ -118,24 +126,17 @@ export function RoutineFlow({ date, when: initial, onClose }: { date: string; wh
               <button type="button" className="orb orb-ring h-24 w-24 text-accent" aria-label={pausedAt ? 'Resume' : 'Pause'} onClick={() => (pausedAt ? (setStartAt(startAt + (Date.now() - pausedAt)), setPausedAt(null)) : setPausedAt(Date.now()))}>
                 <Icon name={pausedAt ? 'play' : 'pause'} size={34} />
               </button>
-              <button type="button" className="orb h-14 w-14" aria-label="Skip to next step" onClick={() => begin(stage === 'cw' ? 'ccw' : 'curls')}>
+              <button type="button" className="orb h-14 w-14" aria-label={stage === 'curls' ? 'Finish now' : 'Skip to next step'} onClick={() => (stage === 'curls' ? finish(repsDone) : begin(stage === 'cw' ? 'ccw' : 'curls'))}>
                 <Icon name="skip" size={20} />
               </button>
             </>
           )}
-          {stage === 'curls' && (
-            <button type="button" className="orb orb-ring h-24 w-24 text-accent" aria-label="Finish routine" onClick={() => finish(reps)}>
-              <Icon name="check" size={34} />
-            </button>
-          )}
         </div>
 
         {stage === 'curls' && (
-          <div className="flex flex-wrap justify-center gap-3">
-            <button type="button" className="btn" onClick={() => finish(ROUTINE.curlReps)}>
-              I counted all {ROUTINE.curlReps} myself
-            </button>
-          </div>
+          <button type="button" className="btn" onClick={() => finish(repsDone)}>
+            End now ({repsDone} curls)
+          </button>
         )}
         {stage === 'intro' && (
           <button type="button" className="btn" onClick={() => finish(null)}>

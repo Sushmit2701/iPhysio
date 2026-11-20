@@ -299,6 +299,9 @@ export const MORNING_WHY: { title: string; body: string }[] = [
   },
 ];
 
+/** Choices for seconds per rep in timed rep sets. */
+export const PACE_OPTIONS = [1.5, 2, 2.5, 3] as const;
+
 export const ROUTINE = {
   circlesS: 60, // per direction
   curlReps: 100,

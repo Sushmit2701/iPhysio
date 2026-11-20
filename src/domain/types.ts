@@ -106,6 +106,8 @@ export interface Settings extends SyncMeta {
   holdS: number;
   restS: number;
   isoSets: number;
+  /** Seconds per rep for timed rep sets (pump work, nerve glides, routine curls). */
+  repPaceS: number;
 }
 
 export const APPT_KINDS = ['Scan request', 'Scan result', 'Clinic', 'Physio', 'Other'] as const;

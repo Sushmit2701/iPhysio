@@ -28,6 +28,7 @@ export function defaultSettings(): Settings {
     holdS: 40,
     restS: 60,
     isoSets: 4,
+    repPaceS: 2,
     updatedAt: 0,
   };
 }

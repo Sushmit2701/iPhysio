@@ -23,7 +23,10 @@ export default function Settings() {
         <Seg label="Hold length" options={['30', '35', '40', '45'] as const} value={String(settings.holdS) as '30'} onChange={(v) => void patchSettings({ holdS: Number(v) })} />
         <div className="label">Rest between sets</div>
         <Seg label="Rest between sets" options={['30', '45', '60', '90'] as const} value={String(settings.restS) as '30'} onChange={(v) => void patchSettings({ restS: Number(v) })} />
-        <Toggle on={settings.sound} onChange={(v) => { void patchSettings({ sound: v }); if (v) beep(true); }}>
+        <div className="label">Pace for timed rep sets (pump work, nerve glides, routine curls)</div>
+        <Seg label="Pace per rep" options={['1.5', '2', '2.5', '3'] as const} value={String(settings.repPaceS) as '2'} onChange={(v) => void patchSettings({ repPaceS: Number(v) })} />
+        <p className="text-sm text-muted">Seconds per rep. At {settings.repPaceS} s, 30 reps take {Math.round(30 * settings.repPaceS)} s.</p>
+                <Toggle on={settings.sound} onChange={(v) => { void patchSettings({ sound: v }); if (v) beep(true); }}>
           Sound cues (tempo ticks, end of hold)
         </Toggle>
         <Toggle on={settings.haptics} onChange={(v) => { void patchSettings({ haptics: v }); if (v) haptic(true); }}>

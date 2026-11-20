@@ -161,6 +161,7 @@ export function parseBackup(text: string, fallbackT: number): Partial<Snapshot> 
       holdS: inRange(s.holdS, 10, 120),
       restS: inRange(s.restS, 0, 300),
       isoSets: inRange(s.isoSets, 1, 8),
+      repPaceS: inRange(s.repPaceS, 1, 5),
       updatedAt: isNum(s.updatedAt) ? s.updatedAt : fallbackT,
     }) as Settings;
   }

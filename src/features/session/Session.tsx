@@ -5,7 +5,7 @@ import { Icon } from '../../ui/Icon';
 import { go } from '../../ui/route';
 import { useDayEdit } from '../../ui/useEdit';
 import { beep, haptic, keepAwake, unlockAudio } from '../../ui/feedback';
-import { EX, effectiveMode, sessionTarget } from '../../domain/content';
+import { EX, PACE_OPTIONS, effectiveMode, sessionTarget } from '../../domain/content';
 import { patchSettings } from '../../db/repo';
 import type { ExKey, SetLog } from '../../domain/types';
 import { ExerciseHowTo } from '../today/ExerciseHowTo';
@@ -36,11 +36,11 @@ export function Session({ date, startEx }: { date: string; startEx?: string }) {
   const [setNo, setSetNo] = useState(0); // sets completed for current exercise
   const [startAt, setStartAt] = useState(0);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
-  const [reps, setReps] = useState(0);
   const k: ExKey | undefined = queue[exIdx];
   const mode = effectiveMode(settings.phase, settings.mode);
   const target = k ? sessionTarget(settings.phase, settings.mode, k, settings.isoSets) : null;
   const holdS = settings.holdS;
+  const pace = settings.repPaceS;
   const restS = settings.restS;
   const day = days[date] ?? {};
 
@@ -84,7 +84,6 @@ export function Session({ date, startEx }: { date: string; startEx?: string }) {
   const finishExercise = (markDone: boolean) => {
     if (k && markDone) void edit(date, (x) => void (x.done = { ...x.done, [k]: true }), `${EX[k].name}: done`);
     setSetNo(0);
-    setReps(0);
     if (exIdx < queue.length - 1) {
       setExIdx(exIdx + 1);
       setStage('intro');
@@ -95,7 +94,6 @@ export function Session({ date, startEx }: { date: string; startEx?: string }) {
     if (i < 0 || i >= queue.length) return;
     setExIdx(i);
     setSetNo(0);
-    setReps(0);
     setPausedAt(null);
     setStage('intro');
   };
@@ -105,7 +103,6 @@ export function Session({ date, startEx }: { date: string; startEx?: string }) {
     saveSet(log);
     const n = setNo + 1;
     setSetNo(n);
-    setReps(0);
     if (target && n >= target.sets) finishExercise(true);
     else begin('rest');
   };
@@ -135,6 +132,11 @@ export function Session({ date, startEx }: { date: string; startEx?: string }) {
       const done = Math.floor(half / 2);
       if (done >= target.reps) once('tempo-end', () => endSet({ reps: target.reps }));
       else once(`h${half}`, () => cue(half % 2 === 0 ? 'tick-down' : 'tick-up'));
+    } else if (stage === 'work' && target.kind === 'reps') {
+      // Timed set: a soft tick on each rep to follow, a stronger one every 10, then it ends itself
+      const n = Math.floor(elapsed / pace);
+      if (elapsed >= target.reps * pace) once('reps-end', () => endSet({ reps: target.reps }));
+      else if (n > 0) once(`r${n}`, () => (n % 10 === 0 ? beep(settings.sound, 760, 90, 0.12) : beep(settings.sound, 520, 40, 0.05)));
     }
   });
 
@@ -159,17 +161,17 @@ export function Session({ date, startEx }: { date: string; startEx?: string }) {
   const title = stage === 'pain' || stage === 'finish' ? 'Session complete' : `Exercise ${exIdx + 1} of ${queue.length}`;
   const playing = (stage === 'ready' || stage === 'work' || stage === 'rest') && pausedAt === null;
   const inSet = stage === 'ready' || stage === 'work' || stage === 'rest';
-  const total = stage === 'ready' ? READY_S : stage === 'rest' ? restS : target?.kind === 'hold' ? holdS : target?.kind === 'tempo' ? target.reps * 2 * HALF_S : 0;
+  const total = stage === 'ready' ? READY_S : stage === 'rest' ? restS : target?.kind === 'hold' ? holdS : target?.kind === 'tempo' ? target.reps * 2 * HALF_S : target?.kind === 'reps' ? target.reps * pace : 0;
   const mainAction = () => {
     if (!target) return;
     unlockAudio();
-    if (stage === 'intro') return target.kind === 'reps' ? begin('work') : begin('ready');
-    if (stage === 'work' && target.kind === 'reps') return endSet({ reps });
+    if (stage === 'intro') return begin('ready');
     return pausedAt ? resume() : pause();
   };
   const mainLabel =
-    stage === 'intro' ? `Start set ${setNo + 1}` : stage === 'work' && target?.kind === 'reps' ? `Set done (${reps} reps)` : pausedAt ? 'Resume' : 'Pause';
-  const mainIcon = stage === 'intro' || pausedAt ? 'play' : stage === 'work' && target?.kind === 'reps' ? 'check' : 'pause';
+    stage === 'intro' ? `Start set ${setNo + 1}` : pausedAt ? 'Resume' : 'Pause';
+  const mainIcon = stage === 'intro' || pausedAt ? 'play' : 'pause';
+  const repNow = target?.kind === 'reps' ? Math.min(target.reps, Math.floor(elapsed / pace) + 1) : 0;
 
   const showPlayer = k && target && stage !== 'pain' && stage !== 'finish';
 
@@ -185,23 +187,14 @@ export function Session({ date, startEx }: { date: string; startEx?: string }) {
                 ? `${target.sets} holds of ${holdS} s`
                 : target.kind === 'tempo'
                   ? `${target.sets} × ${target.reps}, 3 s down, 3 s up`
-                  : `${target.sets} × about ${target.reps} reps`}
+                  : `${target.sets} × ${target.reps} reps, about ${fmtS(target.reps * pace)} each`}
             </p>
           </div>
 
           {stage === 'work' && target.kind === 'reps' ? (
-            <button
-              type="button"
-              aria-label={`Count a rep, ${reps} so far`}
-              onClick={() => {
-                haptic(settings.haptics);
-                beep(settings.sound, 520, 50, 0.08);
-                setReps(reps + 1);
-              }}
-              className="w-full max-w-[19rem] select-none"
-            >
-              <Vinyl frac={Math.min(1, reps / target.reps)} big={String(reps)} label="Tap per rep" sub={`target ${target.reps}`} spinning={false} />
-            </button>
+            <div className="w-full max-w-[19rem]" role="timer" aria-label={`Rep ${repNow} of ${target.reps}, ${Math.max(0, Math.ceil(total - elapsed))} seconds left`}>
+              <Vinyl frac={elapsed / total} big={String(Math.max(0, Math.ceil(total - elapsed)))} label={`Rep ${repNow} of ${target.reps}`} sub="seconds" spinning={playing} />
+            </div>
           ) : stage === 'work' && target.kind === 'tempo' ? (
             <Tempo elapsed={elapsed} reps={target.reps} cue={EX[k].cue} sub="" />
           ) : (
@@ -216,7 +209,7 @@ export function Session({ date, startEx }: { date: string; startEx?: string }) {
             </div>
           )}
 
-          <SetWave frac={inSet && total ? elapsed / total : stage === 'intro' ? 0 : reps / (target.reps || 1)} left={inSet ? fmtS(elapsed) : `Set ${setNo + 1}`} right={inSet ? fmtS(total) : `of ${target.sets}`} />
+          <SetWave frac={inSet && total ? elapsed / total : 0} left={inSet ? fmtS(elapsed) : `Set ${setNo + 1}`} right={inSet ? fmtS(total) : `of ${target.sets}`} />
 
           <div className="flex w-full items-center justify-center gap-5">
             <button type="button" className="orb h-14 w-14" aria-label="Previous exercise" disabled={exIdx === 0 || inSet} onClick={() => jump(exIdx - 1)}>
@@ -249,9 +242,9 @@ export function Session({ date, startEx }: { date: string; startEx?: string }) {
                 End set
               </button>
             )}
-            {stage === 'work' && target.kind === 'reps' && reps > 0 && (
-              <button type="button" className="btn" onClick={() => setReps(reps - 1)}>
-                Remove a rep
+            {stage === 'work' && target.kind === 'reps' && (
+              <button type="button" className="btn" onClick={() => endSet({ reps: Math.min(target.reps, Math.floor(elapsed / pace)) })}>
+                End set ({Math.min(target.reps, Math.floor(elapsed / pace))} reps)
               </button>
             )}
             {stage === 'intro' && setNo > 0 && (
@@ -272,6 +265,14 @@ export function Session({ date, startEx }: { date: string; startEx?: string }) {
                 <div className="flex flex-col gap-2">
                   <div className="label">Hold length</div>
                   <Seg label="Hold length" options={[30, 35, 40, 45].map((x) => ({ v: String(x), label: `${x} s` }))} value={String(holdS)} onChange={(v) => void patchSettings({ holdS: Number(v) })} />
+                </div>
+              )}
+              {target.kind === 'reps' && (
+                <div className="flex flex-col gap-2">
+                  <div className="label">
+                    Pace per rep <span className="font-normal text-muted">· {target.reps} reps take {fmtS(target.reps * pace)}</span>
+                  </div>
+                  <Seg label="Pace per rep" options={PACE_OPTIONS.map((x) => ({ v: String(x), label: `${x} s` }))} value={String(pace)} onChange={(v) => void patchSettings({ repPaceS: Number(v) })} />
                 </div>
               )}
               <label className="flex flex-col gap-1">

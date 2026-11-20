@@ -199,7 +199,7 @@ test('trends: tap on the pain chart inspects that day', async ({ page }) => {
   await expect(readout).toContainText(/\d+ \w{3}\s*4\s*Daily peak/);
 });
 
-test('morning routine: wrist circles both ways, light curls, marked done', async ({ page }) => {
+test('morning routine: timed wrist circles both ways, timed light curls, marked done', async ({ page }) => {
   await page.clock.install();
   await fresh(page);
   await press(page, page.getByRole('button', { name: /^Morning routine/ }));
@@ -208,10 +208,12 @@ test('morning routine: wrist circles both ways, light curls, marked done', async
   await page.clock.runFor(61_000);
   await expect(page.getByRole('timer', { name: /^Other way/ })).toBeVisible();
   await page.clock.runFor(61_000);
-  const curl = page.getByRole('button', { name: /Count a curl/ });
-  for (let i = 0; i < 3; i++) await press(page, curl);
-  await expect(curl).toHaveAccessibleName('Count a curl, 3 so far');
-  await press(page, page.getByRole('button', { name: 'Finish routine' }));
+  // 100 curls at the default 2 s pace: a 3:20 countdown, no tapping
+  await expect(page.getByRole('timer', { name: /^Curl \d of 100, 19\d seconds left/ })).toBeVisible();
+  await page.clock.runFor(41_000);
+  await expect(page.getByRole('timer', { name: /^Curl 2\d of 100/ })).toBeVisible();
+  await page.clock.runFor(160_000);
+  // It finishes and marks the routine done by itself
   await expect(page.getByRole('button', { name: 'Morning routine, done' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('button', { name: 'Morning routine, done' })).toBeVisible();
@@ -238,4 +240,24 @@ test('neck and shoulder step: log neck pain and burning, see it in Trends', asyn
   await page.goto('/#/plan');
   await press(page, page.getByRole('button', { name: 'Spurling test' }));
   await expect(page.getByText(/Positive only if it reproduces the arm symptom/)).toBeVisible();
+});
+
+test('pump work: a timed set ticks through the reps and ends itself', async ({ page }) => {
+  await page.clock.install();
+  await fresh(page);
+  await press(page, page.getByRole('group', { name: 'Reduce phase style' }).getByRole('button', { name: 'Light pump work' }));
+  await press(page, page.getByRole('button', { name: /Start guided session/ }));
+  await expect(page.getByText(/3 × 30 reps, about 1:00 each/)).toBeVisible();
+  // Slower pace changes the set length
+  await press(page, page.getByRole('group', { name: 'Pace per rep' }).getByRole('button', { name: '2.5 s' }));
+  await expect(page.getByText(/30 reps take 1:15/)).toBeVisible();
+  await press(page, page.getByRole('button', { name: /Start set 1/ }));
+  await page.clock.runFor(3500);
+  await expect(page.getByRole('timer', { name: /^Rep 1 of 30, 75 seconds left/ })).toBeVisible();
+  await page.clock.runFor(25_500);
+  await expect(page.getByRole('timer', { name: /^Rep 11 of 30/ })).toBeVisible();
+  await page.clock.runFor(51_000);
+  await expect(page.getByRole('timer', { name: /^Rest/ })).toBeVisible();
+  await press(page, page.getByRole('button', { name: 'Close' }));
+  await expect(page.getByText('ECRL · 1 set')).toBeVisible();
 });
